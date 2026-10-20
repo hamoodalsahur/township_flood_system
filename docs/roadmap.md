@@ -1,31 +1,24 @@
-# Development roadmap
+# Where we're going next
 
-All work follows the research-informed v2.0 project brief, with corrections and verification recorded before making external claims.
+We're developing the township flood system one working part at a time. The initial features use clearly labelled demo data, so we can test the workflow before connecting verified information.
 
-| Phase | Milestone | Acceptance gate |
+| Stage | What we're building | Progress |
 | --- | --- | --- |
-| 0 | Repo, Next.js shell, README, issue-based workflow | Both scaffold pages load; production build and typecheck pass |
-| 1 | Local BBR geography, SQLite/Prisma, map, dual-interface layout | Seeded zones/roads read from DB; roads and sources displayed clearly |
-| 2 | Rules-based flood engine, scenario controls, simulated 4R buffer | Deterministic stage changes; every synthetic record clearly labelled |
-| 3 | Road graph connectivity and gateway disruption analysis | Verified closures block connectivity; no flooded crossing recommended |
-| 4 | Resident reports, operator verification, alerts and audit log | A report stays unverified until reviewed; status changes traceable |
-| 5 | Hotspot ranking, historical analytics, integration/e2e tests | Complete scenario with documented observed vs simulated information |
-| 6 | Deployment and hackathon handoff | Reproducible release, test notes, working demo, source provenance |
+| Setup | Project structure, GitHub workflow, starting pages | Built and checked locally |
+| 1A | SQLite database and sample road graph | Built; local setup checked |
+| 1B | Clickable map on both pages | Built; browser checked |
+| 2 | Five-stage flood simulation | Built; full test checklist still pending |
+| 3 | Road-network connection checks | Built; browser checked |
+| 4 | Resident reports and management review | Built; basic browser check completed |
+| Next | Authenticated actions and better audit history | Not started |
+| Later | Analytics, source-verified BBR geography and deployment | Not started |
 
-## Team development rules
+## How we work
 
-1. Develop on feature branches, with concise pull requests linked to issues.
-2. Each feature needs an acceptance condition and a reproducible test.
-3. Never commit API secrets, addresses of individual reporters or unauthorised imagery.
-4. Do not present the demo as live infrastructure, emergency routing or validated ML.
-5. Verify all road geometries, labels, access restrictions and official station claims before they are labelled factual.
+1. Keep each change on a feature branch and describe it in a short pull request.
+2. Test the change locally before merging it.
+3. Write down what was checked and any problems we found.
+4. Never present our fictional roads or simulated readings as real conditions.
+5. Use actual sources before adding official place names, measurements or operational decisions.
 
-## Suggested issue order
-
-- [ ] Verify BBR zones, road connectivity and candidate data-source licensing.
-- [ ] Build seeded road graph and map with provenance labels.
-- [ ] Define status/event schema and operator closure workflow.
-- [ ] Implement deterministic flood scenario and risk explanation.
-- [ ] Add report submission and verification.
-- [ ] Add connectivity analysis without promising passability.
-- [ ] Add dashboard analytics, checks and reproducible demo instructions.
+Our next priority is making the operator side safer and more traceable, not rushing to add extra features.

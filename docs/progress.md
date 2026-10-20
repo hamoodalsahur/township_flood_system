@@ -1,41 +1,31 @@
-# Development progress log
+# Our development log
 
-## Milestone 0 — Foundation (20 October 2026)
+This is a quick record of what we've built and what we've actually checked on the project owner's computer.
 
-- Owner verified `npm install`, `npm run typecheck`, `npm run build`, and `npm run dev`.
-- Owner confirmed all three pages `/`, `/resident`, `/management` render correctly.
-- PR #1 merged into `main`; issue #2 closed.
+## Project setup — 20 October 2026
 
-## Phase 1A — Data foundation
+We set up Next.js, TypeScript, Tailwind and the two starting pages. The project owner confirmed that dependency installation, type checking and the production build worked, and that the homepage, resident page and management page opened locally. PR #1 was merged and Issue #2 was closed.
 
-- Added schema, deterministic schematic dataset, APIs and graph-invariant tests on branch `feature/phase1a-data-foundation`.
-- Owner reported VS Code tests ran successfully and localhost APIs opened.
-- Pull request #4 awaits formal review/merge.
+## Phase 1A — Database
 
-## Phase 1B — Interactive schematic map
+Added SQLite and Prisma, plus four fictional zones, eight graph nodes, ten network links and our first read-only APIs. The project owner reported that the local setup and URLs worked. The test geography is not actual BBR mapping.
 
-- Added Leaflet `CRS.Simple` network explorer driven by existing `/api/zones` and `/api/roads` endpoints.
-- Added road/zone detail panel, selected styling, explicit provenance labels and keyboard selection lists.
-- Resident and management views share the same component but do not imply live conditions.
-- **Pending:** owner runs `npm install`, `npm test`, `npm run typecheck`, `npm run build` and browser verification. No local build was executed by the connected GitHub editing interface.
+## Phase 1B — Interactive map
 
-## Phase 2 — Rules-based synthetic 4R scenario (implementation branch)
+Added the Leaflet map to both pages. Clicking roads and zones brings up their stored details. The project owner confirmed that the map and information panel worked in the browser.
 
-- Added five deterministic stages with synthetic rainfall, retention and tide values.
-- Added explainable categoric risk evaluator, shared scenario APIs, and an explicit demo reset.
-- Added scripted operator closure events with **SIMULATED_DEMO_OPERATOR** as the recorded actor; stage 5 keeps confirmed demo closures closed.
-- Added a controller to resident and management views and road status colouring sourced from SQLite APIs.
-- **Pending:** local `npm test`, `npm run typecheck`, `npm run build`, interactive browser scenario run and review. Not field validated.
+## Phase 2 — Flood simulation
 
-## Phase 3 — Network connectivity analysis
+Added five scripted stages with invented rainfall, wetland storage, tide and road status changes. A simulated closure stays closed when the scenario reaches its recovery stage. We still need a separately recorded, complete test checklist for this phase.
 
-- Added a deterministic topological connectivity algorithm and unit tests.
-- Added read-only network assessment endpoint and a shared panel on both portal views.
-- Excludes reported-flooding links, confirmed closures and pedestrian-only trails; marks unknown/at-risk links as uncertain, not drivable.
-- **Owner verification pending:** unit tests, typecheck, build and map interaction. No real road or travel-safety assessment is claimed.
+## Phase 3 — Road connections
 
-## Phase 4 — Demo community reports
-- Added report database records, input checks and demo resident/operator screens.
-- Resident submissions stay unverified; demo reviews never silently change roads.
-- Operator control is not authenticated yet; endpoints are for local use only.
-- Pending local test and build checks from the owner.
+Added a checker for theoretical connections between fictional junctions. It excludes closures, unverified flooding reports and walking trails. The project owner confirmed the update worked locally. These results are not travel advice.
+
+## Phase 4 — Report submissions
+
+Added a form for fictional resident reports and a management queue to corroborate or reject them. Reports don't close roads automatically. The project owner confirmed the screens worked as far as checked; full automated test results haven't been separately provided.
+
+## Before we deploy
+
+Finish the remaining test checklists, add authenticated operator access, review our data sources and make sure the demo-only APIs aren't public. The feature pull requests are still awaiting integration into `main`.

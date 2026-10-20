@@ -1,31 +1,35 @@
-# Initial architecture and scope
+# How the project fits together
 
-## User journeys
+We have two views of the same system: one for residents and one for township management. They both use the same database and APIs, so we don't have to maintain two separate sets of road information.
 
-**Resident:** open the portal → choose neighbourhood → read status *and evidence freshness* → inspect reported/verified road incidents → optionally submit report.
+## The flow
 
-**Operator:** open the dashboard → review alerts/reports → verify evidence → record a road incident or closure with a reason → audit status and later reopening.
+**Resident:** opens the map, checks the details of a fictional zone or road, explores the demo scenario, and can submit a test incident report.
 
-**Hackathon presenter:** activate *SIMULATION* mode → step through a controlled flood timeline → show the resident and operator views changing together. Simulator actions must remain separate from the real-data pathway.
+**Management:** views the same network, checks scenario changes, and reviews those test reports. Review decisions don't automatically close roads.
 
-## Proposed implementation
+**Presenter:** resets the five-stage simulation and advances it while showing the changes on both pages.
 
-- Frontend: Next.js App Router + React + TypeScript + Tailwind CSS
-- Mapping later: Leaflet, sourced geographic data with provenance and attribution
-- MVP storage later: Prisma + SQLite
-- Shared backend: Next.js server routes
-- Flood logic: explainable rules first, external public-data integration only when verified
-- Road logic: graph connectivity, closures and uncertainty; never suggest driving through floodwater
-- Testing later: unit tests for statuses, graph connectivity and simulation invariants; browser flows
+## What we're using
 
-## Initial repository scope
+| Part | Technology | Why |
+| --- | --- | --- |
+| Website | Next.js, React, TypeScript and Tailwind | One project for both interfaces |
+| Map | Leaflet with `CRS.Simple` | Interactive schematic network, not actual GPS locations |
+| Database | Prisma and SQLite | Saves roads, zones, scenario history and reports locally |
+| Backend | Next.js API routes | Reads and updates the shared data |
+| Risk logic | Rules written in TypeScript | Explains the result of each fictional stage |
+| Network analysis | Graph traversal | Checks connections in the test graph, without claiming road safety |
+| Tests | Node test runner through `tsx` | Checks the most important rules |
 
-This foundation commit delivers a runnable app shell and navigable resident/operator pages. It intentionally contains no pretend map data, flood statistics, routes or functioning backend.
+## What isn't finished
 
-## Handoff principles
+We still need verified geographic data, authenticated operator actions, stronger audit records and proper deployment restrictions. We don't have real-time sensors, a validated flood prediction model or real road navigation.
 
-- Keep source modes explicit: `simulation`, `historical_replay`, `live`.
-- Keep distinct risk assessments, crowd reports and verified operational closures.
-- Treat outdated data as unknown.
-- Verify real BBR road/staging location names before depicting them as suitable destinations.
-- Prefer modular features and incremental, reviewable commits.
+## Rules we're keeping
+
+- Label simulated, historical and live information separately.
+- Don't turn a resident report into a confirmed road closure automatically.
+- Keep outdated road conditions marked unknown.
+- Never assume a theoretical graph connection means it's safe to travel.
+- Check BBR locations and any proposed staging spots before showing them as real.

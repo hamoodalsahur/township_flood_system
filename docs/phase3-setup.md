@@ -1,8 +1,8 @@
-# Phase 3 — Road-network connectivity experiment
+# Checking the test road connections
 
 This is **not navigation** and produces no safe route or vehicle-specific floodwater recommendation. It is a theoretical test on fictional topology.
 
-## Windows PowerShell
+## Run it in VS Code (PowerShell)
 
 Stop the development server and save local changes.
 

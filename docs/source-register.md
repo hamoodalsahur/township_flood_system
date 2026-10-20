@@ -1,4 +1,4 @@
-# Source and geography verification register
+# What we know about our map data
 
 **This register prevents schematic demonstration data from being mistaken for real Bandar Bukit Raja locations or measured flood conditions.**
 
@@ -13,18 +13,18 @@
 | Emergency staging / high-ground parking hubs in v2 brief | Unverified candidate locations | Not seeded | **No** | Get operator confirmation and suitable safety assessments |
 | Live weather/river readings | Not connected | Unavailable | **No** | Add documented authorised adapters, server cache, timestamps |
 
-## Coordinate systems
+## About the map coordinates
 
 - `schematic_xy`: local 0–100 coordinate canvas used only for a network diagram; cannot be placed on a geospatial map as actual streets.
 - Real geography in a future phase: GeoJSON WGS84 longitude/latitude coordinates with traceable provenance. Do **not** relabel or transform the schematic positions to pretend they are real.
 
-## API contract for Phase 1A
+## What the first APIs return
 
 - `GET /api/zones`: returns `dataMode=simulation`, `coordinateSystem=schematic_xy`, zone shapes, risk as `unknown`, and provenance.
 - `GET /api/roads`: returns the 8 graph nodes, 10 road edges, unknown road statuses and provenance.
 
 Neither endpoint currently provides a flood warning, road guidance, sensor reading or predictive output.
 
-## Data correction policy
+## When we find better sources
 
 If source evidence contradicts a future seed record, correct it with a cited change, update the source register and record the impact on geometry and related status events. Keep simulator records segregated from live records.
