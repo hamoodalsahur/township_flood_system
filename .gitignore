@@ -1,0 +1,29 @@
+# Dependencies
+/node_modules
+/.pnp
+.pnp.*
+# Next.js builds
+/.next/
+/out/
+/build/
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+# Local databases and binary assets
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+/prisma/migrations/**/migration_lock.toml
+# Diagnostics
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+# IDE
+.vscode/
+.idea/
