@@ -21,3 +21,7 @@ The review update and audit entry are saved together in one database transaction
 - The report intake endpoint is still open and must be protected against abuse before public deployment.
 
 The server deliberately disables demo-key authorisation when `NODE_ENV` is not `development`. This isn't a deployable management portal yet.
+
+## Updated demo controls
+
+The management view now has one shared operator key input for reviewing reports, reading history and changing the five-stage scenario. The resident scenario is read-only. Both scenario POST endpoints now check the same development-only key; this is still not production-grade authentication.

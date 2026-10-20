@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 type Report = { id: string; roadId: string; category: string; description: string; status: string; createdAt: string; reviewNote: string | null };
 type Road = { id: string; label: string };
 
-export default function ReportWorkspace({ view }: { view: "resident" | "management" }) {
+export default function ReportWorkspace({ view, operatorKey = "" }: { view: "resident" | "management"; operatorKey?: string }) {
   const [roads, setRoads] = useState<Road[]>([]);
   const [reports, setReports] = useState<Report[]>([]);
   const [roadId, setRoadId] = useState("");
@@ -14,7 +14,6 @@ export default function ReportWorkspace({ view }: { view: "resident" | "manageme
   const [reviewNotes, setReviewNotes] = useState<Record<string, string>>({});
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
-  const [operatorKey, setOperatorKey] = useState("");
   const load = useCallback(async () => {
     try {
       const [a,b] = await Promise.all([fetch("/api/roads", { cache: "no-store" }),fetch("/api/reports", { cache: "no-store" })]);
@@ -67,10 +66,6 @@ export default function ReportWorkspace({ view }: { view: "resident" | "manageme
       </label>
       <button type="button" disabled={busy||!roadId||description.trim().length<8} onClick={()=>void submit()} className="rounded-lg bg-teal-700 px-4 py-2 font-semibold text-white disabled:opacity-40">Submit demo report</button>
     </div>:<p className="mt-2 text-sm text-slate-600">This queue simulates operator decisions. Enter the local demo operator key before reviewing reports. This is not production authentication.</p>}
-    {view==="management"?<label className="mt-4 block text-sm font-semibold">Local demo operator key
-      <input type="password" autoComplete="off" value={operatorKey} onChange={e=>setOperatorKey(e.target.value)} className="mt-1 block w-full rounded-lg border p-2" placeholder="Enter the key from your .env file" />
-      <span className="mt-1 block text-xs font-normal text-slate-500">Keep this key private. The demo review API works only in local development.</span>
-    </label>:null}
     {message?<p role="status" className="mt-3 rounded-lg bg-slate-100 p-3 text-sm">{message}</p>:null}
     <div className="mt-5 space-y-3">
       <h3 className="font-semibold">Recent demo reports ({reports.length})</h3>

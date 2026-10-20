@@ -66,3 +66,7 @@ We keep our work in feature branches and review changes through pull requests. S
 ## Local demo operator access
 
 Report review now requires a private local `DEMO_OPERATOR_KEY`, and successful reviews appear in a simple audit history. See [operator demo setup](docs/operator-demo.md). This is not production authentication; scenario-changing APIs still need proper protection before deployment.
+
+## Improved local controls
+
+The management page now has a single development-only operator key input. Residents can view the simulation but cannot advance it from their portal. Scenario updates, reviews and audit reads check the key on the server. See [operator demo notes](docs/operator-demo.md).

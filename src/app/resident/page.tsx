@@ -18,7 +18,7 @@ export default function ResidentPage() {
           Explore the connected demonstration zones and roads. This interface illustrates how verified observations
           could eventually appear; it has no real road conditions or route guidance.
         </p>
-        <DemoController />
+        <DemoController readOnly />
         <MapWorkspace variant="resident" />
         <ConnectivityPanel />
         <ReportWorkspace view="resident" />
