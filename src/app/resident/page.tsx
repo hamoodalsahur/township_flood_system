@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import PrototypeNotice from "@/components/PrototypeNotice";
 import MapWorkspace from "@/components/maps/MapWorkspace";
+import GeographicReferenceWorkspace from "@/components/maps/GeographicReferenceWorkspace";
 import DemoController from "@/components/scenarios/DemoController";
 import ConnectivityPanel from "@/components/network/ConnectivityPanel";
 import ReportWorkspace from "@/components/reports/ReportWorkspace";
@@ -20,6 +21,7 @@ export default function ResidentPage() {
         </p>
         <DemoController readOnly />
         <MapWorkspace variant="resident" />
+        <GeographicReferenceWorkspace />
         <ConnectivityPanel />
         <ReportWorkspace view="resident" />
       </div>
