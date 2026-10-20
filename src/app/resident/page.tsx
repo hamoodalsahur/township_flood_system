@@ -3,6 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import PrototypeNotice from "@/components/PrototypeNotice";
 import MapWorkspace from "@/components/maps/MapWorkspace";
 import DemoController from "@/components/scenarios/DemoController";
+import ConnectivityPanel from "@/components/network/ConnectivityPanel";
 
 export default function ResidentPage() {
   return (
@@ -18,6 +19,7 @@ export default function ResidentPage() {
         </p>
         <DemoController />
         <MapWorkspace variant="resident" />
+        <ConnectivityPanel />
       </div>
     </main>
   );

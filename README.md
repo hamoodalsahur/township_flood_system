@@ -56,3 +56,7 @@ Use short-lived branches and pull requests, document local tests and do not comm
 ## Phase 2 simulation
 
 The five-stage 4R demo is available on the resident and management pages. Use **Reset demo** to start at Stage 1 and advance sequentially. Numeric inputs, operator actions, road statuses and risk categories are controlled synthetic demonstration data, not real conditions. See [Phase 2 setup](docs/phase2-setup.md).
+
+## Phase 3 — Connectivity experiment
+
+Both portal views now include a schematic graph connectivity experiment. It excludes confirmed closures, unverified flood reports and walking trails, while prominently flagging any hypothetical connection using unknown or at-risk road links. **It is not navigation or a guarantee of road access.** See [Phase 3 instructions](docs/phase3-setup.md).

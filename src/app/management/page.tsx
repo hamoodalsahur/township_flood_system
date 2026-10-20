@@ -3,6 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import PrototypeNotice from "@/components/PrototypeNotice";
 import MapWorkspace from "@/components/maps/MapWorkspace";
 import DemoController from "@/components/scenarios/DemoController";
+import ConnectivityPanel from "@/components/network/ConnectivityPanel";
 
 export default function ManagementPage() {
   return (
@@ -18,6 +19,7 @@ export default function ManagementPage() {
         </p>
         <DemoController />
         <MapWorkspace variant="management" />
+        <ConnectivityPanel />
       </div>
     </main>
   );
