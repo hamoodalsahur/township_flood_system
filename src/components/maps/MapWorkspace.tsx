@@ -6,6 +6,8 @@ import { AlertTriangle, Database, MapPinned, RefreshCw } from "lucide-react";
 import type { MapRoad, MapZone, RoadsResponse, ZonesResponse } from "@/lib/map-types";
 import { isSchematicMapData, statusLabel } from "@/lib/map-types";
 
+const changeEvent = "township-demo-updated";
+
 const NetworkMap = dynamic(() => import("./NetworkMap"), {
   ssr: false,
   loading: () => <div className="flex h-[370px] items-center justify-center bg-slate-100 sm:h-[450px]">Preparing schematic network…</div>,
@@ -45,6 +47,12 @@ export default function MapWorkspace({ variant }: { variant: "resident" | "manag
       if (!signal?.aborted) setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    const listener = () => { void reload(); };
+    window.addEventListener(changeEvent, listener);
+    return () => window.removeEventListener(changeEvent, listener);
+  }, [reload]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -92,7 +100,7 @@ export default function MapWorkspace({ variant }: { variant: "resident" | "manag
                 <span>● Gateway node</span>
                 <span className="text-slate-600">━ Road link</span>
                 <span className="text-violet-700">┄ Trail (not drivable)</span>
-                <span>All conditions: Unknown</span>
+                <span>Statuses: see coloured segments</span>
               </div>
             </div>
             <aside className="rounded-xl border border-slate-200 bg-slate-50 p-4" aria-live="polite">

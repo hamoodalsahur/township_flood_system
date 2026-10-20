@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import PrototypeNotice from "@/components/PrototypeNotice";
 import MapWorkspace from "@/components/maps/MapWorkspace";
+import DemoController from "@/components/scenarios/DemoController";
 
 export default function ManagementPage() {
   return (
@@ -15,6 +16,7 @@ export default function ManagementPage() {
           This shared network view retrieves the same database records as the resident portal. Verification actions,
           incident management and actual 4R hydrological information are not connected yet.
         </p>
+        <DemoController />
         <MapWorkspace variant="management" />
       </div>
     </main>
