@@ -1,8 +1,8 @@
-# Phase 4 — Community reporting prototype
+# Trying the demo reporting page
 
 This branch builds on Phase 3. It adds stored fictional report submissions and a demo review queue. **Operator review is not authenticated. Never expose the mutation endpoints publicly as production functionality.**
 
-## Local setup (PowerShell)
+## Run it in VS Code (PowerShell)
 Stop the dev server, then run:
 
 ```powershell
@@ -20,7 +20,7 @@ npm run dev
 
 If the branch exists locally already, switch to it and pull instead.
 
-## Try the flow
+## Give it a try
 1. At /resident, find **Submit a demonstration report** and select a fictional road and category.
 2. Enter a fictional observation of at least 8 characters; do not enter real names, addresses, pictures or personal data.
 3. Submit. The report should display as **unverified**, without closing any road.

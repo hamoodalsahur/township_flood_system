@@ -1,8 +1,8 @@
-# Phase 1A — Local database setup and verification
+# Setting up the database
 
 Before starting, stop the Next.js development server using Ctrl+C.
 
-## Windows PowerShell setup (project root)
+## Run it in VS Code (PowerShell)
 
 ```powershell
 git fetch origin

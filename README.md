@@ -1,21 +1,17 @@
-# Township Flood Intelligence & Road Accessibility System
+# Township Flood System
 
-Sime Darby Property University Hackathon prototype with Bandar Bukit Raja as a research focus.
+A flood-awareness prototype we're building for the Sime Darby Property University Hackathon, using Bandar Bukit Raja as our case study.
 
-> **Status:** Phase 1A data foundation. This is **NOT** a live flood warning, road-navigation, evacuation or safety system. Any seeded road or zone geography is an explicitly fictional **SCHEMATIC DEMONSTRATION**, not real BBR mapping.
+The idea is simple: give residents a clearer picture of possible road disruptions, while giving township management a place to review reports and follow up on incidents.
 
-## What exists today
+**Where we're at:** we've built the basic app, a test database, an interactive network map, a five-stage flood simulation, a road-connection checker and a demo reporting page. We're still using **fictional locations and simulated conditions**, not live flood data or actual road directions.
 
-- Next.js / TypeScript / Tailwind app with landing page, resident and management placeholders.
-- SQLite / Prisma schema and an idempotent seed for 4 *illustrative* zones, 8 test nodes and 10 connected road/trail links.
-- Provenance/source labels and unknown status defaults (no claimed open or safe roads).
-- Read-only JSON endpoints for zones and roads; test checks for graph consistency.
+## Try it on your computer
 
-## Quick start on Windows
-
-Prerequisites: Node.js LTS, npm and Git.
+You'll need Node.js, npm and Git. Open the project folder in VS Code and run:
 
 ```powershell
+# Do this once, unless you already have a .env file
 Copy-Item .env.example .env
 npm install
 npm run db:generate
@@ -27,40 +23,42 @@ npm run build
 npm run dev
 ```
 
-Visit:
-- `http://localhost:3000` — project landing page
-- `http://localhost:3000/resident` — resident portal placeholder
-- `http://localhost:3000/management` — operator dashboard placeholder
-- `http://localhost:3000/api/zones` — seeded schematic zones JSON
-- `http://localhost:3000/api/roads` — seeded schematic road graph JSON
+Visit these pages after the server starts:
 
-If the local .env file already exists, check it rather than overwriting it.
+- `http://localhost:3000` — project homepage
+- `http://localhost:3000/resident` — resident view, map, simulation and sample report form
+- `http://localhost:3000/management` — management view and demo report review
+- `http://localhost:3000/api/zones` — sample township zones
+- `http://localhost:3000/api/roads` — sample road network
 
-## Planned next phases
+If `.env` already exists, check its settings instead of overwriting it.
 
-Source-verified BBR geography, interactive map, flood risk rules, demo scenario controller, report verification, alerts, road connectivity and analytics. **These are not implemented yet.**
+## What we've built so far
 
-## Documentation
+| Part | What it does |
+| --- | --- |
+| Database | Saves our sample township zones, roads and test reports |
+| Interactive map | Lets us click a zone or road and read its details |
+| Flood simulation | Walks through five fictional stages of changing rain, water storage and road conditions |
+| Network checker | Shows whether two junctions are connected in our test graph, **not** whether travelling is safe |
+| Resident reports | Lets us submit fictional incident reports for testing |
+| Management reviews | Lets us mark demo reports as corroborated or rejected, without automatically closing any roads |
 
-- [Phase 1A setup and troubleshooting](docs/phase1a-setup.md)
-- [Source and geography register](docs/source-register.md)
-- [Roadmap](docs/roadmap.md)
-- [Architecture](docs/architecture.md)
-- [Data integrity and safety](docs/data-integrity.md)
-- [Progress log](docs/progress.md)
+## What we're working toward
 
-## Development rules
+Next, we'll tighten operator access and add a proper history of changes. Then we can improve the analytics and start replacing the fictional map with geographic information we can actually verify.
 
-Use short-lived branches and pull requests, document local tests and do not commit secrets, personal resident locations, unauthorised imagery or invented live sensor values. The original v2.0 handoff remains planning input; any unverified facts and hypothetical staging sites in it must be reviewed before being represented as authentic records.
+## Project notes
 
-## Phase 2 simulation
+- [Development roadmap](docs/roadmap.md)
+- [Architecture and current scope](docs/architecture.md)
+- [Where our map data comes from](docs/source-register.md)
+- [How we're handling data carefully](docs/data-integrity.md)
+- [Development progress](docs/progress.md)
+- Setup guides: [database](docs/phase1a-setup.md), [map](docs/phase1b-setup.md), [simulation](docs/phase2-setup.md), [network checks](docs/phase3-setup.md), [reports](docs/phase4-setup.md)
 
-The five-stage 4R demo is available on the resident and management pages. Use **Reset demo** to start at Stage 1 and advance sequentially. Numeric inputs, operator actions, road statuses and risk categories are controlled synthetic demonstration data, not real conditions. See [Phase 2 setup](docs/phase2-setup.md).
+## Important note
 
-## Phase 3 — Connectivity experiment
+**This is a hackathon demo, not a live warning or navigation system.** Our current map is schematic, the flood readings are invented test values, and the operator review page does not have authentication yet. Don't use it for real-world safety decisions, enter personal details into the demo, or publish the report-changing APIs as a production service.
 
-Both portal views now include a schematic graph connectivity experiment. It excludes confirmed closures, unverified flood reports and walking trails, while prominently flagging any hypothetical connection using unknown or at-risk road links. **It is not navigation or a guarantee of road access.** See [Phase 3 instructions](docs/phase3-setup.md).
-
-## Phase 4 — Demo reporting
-
-Residents can submit fictional reports and the management view can corroborate/reject them. Reporting doesn't close any road. This is an unauthenticated **local-only prototype**, not production incident reporting. See [Phase 4 setup](docs/phase4-setup.md).
+We keep our work in feature branches and review changes through pull requests. Source material and the original v2.0 project brief guide the work, but we verify location details before treating them as facts.

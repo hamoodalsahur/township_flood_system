@@ -1,8 +1,8 @@
-# Data integrity and safety requirements
+# Keeping our demo data honest
 
 This is a planning/hackathon system, **not a deployed flood warning or navigation service**.
 
-## Required safeguards
+## Rules we're following
 
 - Show **SIMULATION — NOT LIVE CONDITIONS** on every future synthetic scenario view and API response.
 - No invented real-time sensor values, predicted probabilities, real closures or verified staging hubs.
@@ -15,6 +15,6 @@ This is a planning/hackathon system, **not a deployed flood warning or navigatio
 - Do not calculate sedan/4x4 'safe wading depth' recommendations or route users through reported flooding.
 - Route outputs can show graph accessibility based on known restrictions, but cannot guarantee safety or replace official notices.
 
-## Geographic verification needed
+## Locations we still need to check
 
 The v2.0 proposal names gateways, roads, JPS stations and proposed high-ground staging locations. Treat unverified names, coordinates, hydrological assumptions and station thresholds as **research leads**, not authoritative seed facts. Record supporting sources separately before integrating them into maps or active features.
