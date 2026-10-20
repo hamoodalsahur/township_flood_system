@@ -73,6 +73,7 @@ model RoadSegment {
   toNode          GraphNode         @relation("RoadTo", fields: [toNodeId], references: [id])
   source          DataSource        @relation(fields: [sourceId], references: [id])
   statusEvents    RoadStatusEvent[]
+  floodReports    FloodReport[]
 
   @@index([zoneId])
   @@index([fromNodeId])
@@ -105,4 +106,21 @@ model ScenarioRun {
   completedAt  DateTime?
 
   @@map("scenario_runs")
+}
+
+model FloodReport {
+  id           String   @id @default(cuid())
+  roadId       String
+  category     String
+  description  String
+  status       String   @default("unverified")
+  reviewNote   String?
+  reviewedAt   DateTime?
+  createdAt    DateTime @default(now())
+  sourceMode   String   @default("simulation")
+  road         RoadSegment @relation(fields: [roadId], references: [id])
+
+  @@index([status, createdAt])
+  @@index([roadId])
+  @@map("flood_reports")
 }

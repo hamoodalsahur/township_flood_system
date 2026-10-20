@@ -60,3 +60,7 @@ The five-stage 4R demo is available on the resident and management pages. Use **
 ## Phase 3 — Connectivity experiment
 
 Both portal views now include a schematic graph connectivity experiment. It excludes confirmed closures, unverified flood reports and walking trails, while prominently flagging any hypothetical connection using unknown or at-risk road links. **It is not navigation or a guarantee of road access.** See [Phase 3 instructions](docs/phase3-setup.md).
+
+## Phase 4 — Demo reporting
+
+Residents can submit fictional reports and the management view can corroborate/reject them. Reporting doesn't close any road. This is an unauthenticated **local-only prototype**, not production incident reporting. See [Phase 4 setup](docs/phase4-setup.md).

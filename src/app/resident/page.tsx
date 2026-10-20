@@ -4,6 +4,7 @@ import PrototypeNotice from "@/components/PrototypeNotice";
 import MapWorkspace from "@/components/maps/MapWorkspace";
 import DemoController from "@/components/scenarios/DemoController";
 import ConnectivityPanel from "@/components/network/ConnectivityPanel";
+import ReportWorkspace from "@/components/reports/ReportWorkspace";
 
 export default function ResidentPage() {
   return (
@@ -20,6 +21,7 @@ export default function ResidentPage() {
         <DemoController />
         <MapWorkspace variant="resident" />
         <ConnectivityPanel />
+        <ReportWorkspace view="resident" />
       </div>
     </main>
   );
