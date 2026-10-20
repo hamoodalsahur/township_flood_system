@@ -33,3 +33,9 @@
 - Added read-only network assessment endpoint and a shared panel on both portal views.
 - Excludes reported-flooding links, confirmed closures and pedestrian-only trails; marks unknown/at-risk links as uncertain, not drivable.
 - **Owner verification pending:** unit tests, typecheck, build and map interaction. No real road or travel-safety assessment is claimed.
+
+## Phase 4 — Demo community reports
+- Added report database records, input checks and demo resident/operator screens.
+- Resident submissions stay unverified; demo reviews never silently change roads.
+- Operator control is not authenticated yet; endpoints are for local use only.
+- Pending local test and build checks from the owner.

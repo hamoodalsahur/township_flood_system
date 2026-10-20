@@ -4,6 +4,7 @@ import PrototypeNotice from "@/components/PrototypeNotice";
 import MapWorkspace from "@/components/maps/MapWorkspace";
 import DemoController from "@/components/scenarios/DemoController";
 import ConnectivityPanel from "@/components/network/ConnectivityPanel";
+import ReportWorkspace from "@/components/reports/ReportWorkspace";
 
 export default function ManagementPage() {
   return (
@@ -20,6 +21,7 @@ export default function ManagementPage() {
         <DemoController />
         <MapWorkspace variant="management" />
         <ConnectivityPanel />
+        <ReportWorkspace view="management" />
       </div>
     </main>
   );
