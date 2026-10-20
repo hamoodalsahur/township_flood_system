@@ -6,6 +6,7 @@ import DemoController from "@/components/scenarios/DemoController";
 import ReportWorkspace from "@/components/reports/ReportWorkspace";
 import AuditPanel from "@/components/audit/AuditPanel";
 import MapWorkspace from "@/components/maps/MapWorkspace";
+import GeographicReferenceWorkspace from "@/components/maps/GeographicReferenceWorkspace";
 import ConnectivityPanel from "@/components/network/ConnectivityPanel";
 
 export default function ManagementControls() {
@@ -71,6 +72,7 @@ export default function ManagementControls() {
       </div>
       <DemoController operatorKey={operatorKey} />
       <MapWorkspace variant="management" />
+      <GeographicReferenceWorkspace />
       <ConnectivityPanel />
       <ReportWorkspace view="management" operatorKey={operatorKey} />
       <AuditPanel operatorKey={operatorKey} />
