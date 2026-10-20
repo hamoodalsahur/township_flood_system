@@ -62,3 +62,7 @@ Next, we'll tighten operator access and add a proper history of changes. Then we
 **This is a hackathon demo, not a live warning or navigation system.** Our current map is schematic, the flood readings are invented test values, and the operator review page does not have authentication yet. Don't use it for real-world safety decisions, enter personal details into the demo, or publish the report-changing APIs as a production service.
 
 We keep our work in feature branches and review changes through pull requests. Source material and the original v2.0 project brief guide the work, but we verify location details before treating them as facts.
+
+## Local demo operator access
+
+Report review now requires a private local `DEMO_OPERATOR_KEY`, and successful reviews appear in a simple audit history. See [operator demo setup](docs/operator-demo.md). This is not production authentication; scenario-changing APIs still need proper protection before deployment.

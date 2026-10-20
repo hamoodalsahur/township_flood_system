@@ -124,3 +124,16 @@ model FloodReport {
   @@index([roadId])
   @@map("flood_reports")
 }
+
+model AuditEntry {
+  id         String   @id @default(cuid())
+  action     String
+  subjectId  String
+  actor      String
+  detail     String
+  sourceMode String   @default("simulation")
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("audit_entries")
+}
