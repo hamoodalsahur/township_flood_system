@@ -99,7 +99,7 @@ export default function MapWorkspace({ variant }: { variant: "resident" | "manag
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Selected feature</p>
               {selection ? (
                 <div className="mt-3 space-y-3 text-sm">
-                  <h3 className="text-lg font-semibold leading-snug">{selection.record.name ?? (selection.kind === "road" ? selection.record.label : "")}</h3>
+                  <h3 className="text-lg font-semibold leading-snug">{selection.kind === "road" ? selection.record.label : selection.record.name}</h3>
                   <dl className="space-y-2">
                     <div><dt className="font-medium text-slate-500">Type</dt><dd>{selection.kind === "road" ? selection.record.corridorType.replaceAll("_", " ") : "Illustrative zone"}</dd></div>
                     <div><dt className="font-medium text-slate-500">{selection.kind === "road" ? "Road status" : "Flood risk"}</dt><dd>{selection.kind === "road" ? statusLabel(selection.record.status) : "Unknown — no sensor observations"}</dd></div>
