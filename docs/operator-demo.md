@@ -1,27 +1,21 @@
-# Reviewing demo reports and reading the history
+# Logging in to the local management demo
 
-The reporting flow now uses a local-development-only key. It's a stepping stone to learning access control, **not** a replacement for real accounts or server-side sessions.
+We kept the management login simple: a password field, a login button and a logout button. It reuses the development-only operator key check already in our project, so we didn't add new user accounts or a separate login API.
 
-## Set up your local key
+## Try it
 
-Open your existing `.env` and add `DEMO_OPERATOR_KEY` with a **private, randomly generated value of at least 12 characters**. Don't paste the key into chat or commit the actual value to GitHub. Keep `DATABASE_URL` unchanged.
+Keep a private `DEMO_OPERATOR_KEY` (at least 12 characters) in your local `.env` and restart the dev server after editing that file. Never commit or share the actual key.
 
-Restart `npm run dev` so the server reads the new environment variable.
+Open `http://localhost:3000/management`. Before logging in, only the login screen is displayed. Enter your `DEMO_OPERATOR_KEY` and click **Log in**. The dashboard will appear. Click **Log out** to return to the login screen.
 
-At `/resident`, submit a fictional report. At `/management`, enter the demo key to review it, then use **Demo review history** to see the new audit entry. Try entering the wrong key and confirm that reviewing is rejected.
+The key stays in React state only. Refreshing the page also returns you to the login screen.
 
-The review update and audit entry are saved together in one database transaction. If the update fails, the history should not claim it happened.
+## What this does and doesn't protect
 
-## What this does not secure
+- The screen stays hidden until the server confirms the correct demo key.
+- Report-review actions, audit-history reads and scenario changes still require that key on their server endpoints.
+- Other read-only demo APIs remain available, so this **isn't full server-side authentication** or a private data system.
+- The check works only in local `NODE_ENV=development`; it deliberately refuses production use.
+- No user accounts, sessions, cookies, registration or reset-password feature are included.
 
-- No individual operator accounts or roles.
-- No hardened authentication or rate limiting.
-- No protection for the old scenario POST endpoints; do not deploy them publicly.
-- Demo key is entered in the browser; local development only.
-- The report intake endpoint is still open and must be protected against abuse before public deployment.
-
-The server deliberately disables demo-key authorisation when `NODE_ENV` is not `development`. This isn't a deployable management portal yet.
-
-## Updated demo controls
-
-The management view now has one shared operator key input for reviewing reports, reading history and changing the five-stage scenario. The resident scenario is read-only. Both scenario POST endpoints now check the same development-only key; this is still not production-grade authentication.
+Keep it local. Before any public launch we'll need proper authentication, permissions and separate management-data access rules.
