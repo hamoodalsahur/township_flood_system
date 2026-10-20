@@ -22,7 +22,7 @@ export default function GeographicReferenceMap({ roads = [] }: { roads?: RoadFea
         <ZoomControl position="topright" />
         {roads.map(road => (
           <Polyline key={road.properties.id}
-            positions={road.geometry.coordinates.map(([lon, lat]) => [lat, lon])}
+            positions={road.geometry.coordinates.map(([lon, lat]) => [lat, lon] as [number, number])}
             pathOptions={{ color: "#0f766e", weight: 4, opacity: 0.75 }}>
             <Tooltip sticky>{road.properties.name} · OSM mapped, not locally verified</Tooltip>
           </Polyline>
