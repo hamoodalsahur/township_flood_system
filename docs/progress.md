@@ -4,14 +4,17 @@
 
 - Owner verified `npm install`, `npm run typecheck`, `npm run build`, and `npm run dev`.
 - Owner confirmed all three pages `/`, `/resident`, `/management` render correctly.
-- PR #1 merged into `main`; tracked issue #2 closed.
+- PR #1 merged into `main`; issue #2 closed.
 
-## Phase 1A — Data foundation (implementation branch)
+## Phase 1A — Data foundation
 
-- Added SQLite/Prisma models for provenance, schematic zones, graph nodes, road edges, status-event history and scenario runs.
-- Added deterministic, idempotent demonstration seed with 4 zones, 8 nodes, 10 edges and 3 gateways.
-- Added read-only `GET /api/zones` and `GET /api/roads`.
-- Added graph-invariant tests and a strict source register.
-- **Not yet locally verified:** dependency installation, Prisma generation/database sync, tests, typecheck, build and API response inspection. Owner should perform the commands in `docs/phase1a-setup.md`.
+- Added schema, deterministic schematic dataset, APIs and graph-invariant tests on branch `feature/phase1a-data-foundation`.
+- Owner reported VS Code tests ran successfully and localhost APIs opened.
+- Pull request #4 awaits formal review/merge.
 
-**Next:** Build and test a map/schematic UI from validated geometry, then plan the acquisition of sourced BBR road geometry.
+## Phase 1B — Interactive schematic map
+
+- Added Leaflet `CRS.Simple` network explorer driven by existing `/api/zones` and `/api/roads` endpoints.
+- Added road/zone detail panel, selected styling, explicit provenance labels and keyboard selection lists.
+- Resident and management views share the same component but do not imply live conditions.
+- **Pending:** owner runs `npm install`, `npm test`, `npm run typecheck`, `npm run build` and browser verification. No local build was executed by the connected GitHub editing interface.
