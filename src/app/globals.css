@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+body {
+  background: #f5f8fb;
+  color: #102840;
+  min-height: 100vh;
+}
+
+a {
+  text-decoration: none;
+}
+
+a:focus-visible {
+  outline: 3px solid #176891;
+  outline-offset: 4px;
+}
