@@ -1,0 +1,37 @@
+/** OpenStreetMap road geometry for geographic *context*, never flood routing. */
+export type RoadFeature = {
+  type: "Feature";
+  geometry: { type: "LineString"; coordinates: [number, number][] };
+  properties: {
+    id: string;
+    name: string;
+    highway: string;
+    sourceUrl: string;
+    verification: "osm_unverified";
+  };
+};
+export type RoadCollection = { type: "FeatureCollection"; features: RoadFeature[] };
+
+export function validCoordinate(value: unknown): value is [number, number] {
+  return Array.isArray(value) && value.length === 2 &&
+    typeof value[0] === "number" && Number.isFinite(value[0]) && value[0] >= -180 && value[0] <= 180 &&
+    typeof value[1] === "number" && Number.isFinite(value[1]) && value[1] >= -90 && value[1] <= 90;
+}
+export function validRoadCollection(value: unknown): value is RoadCollection {
+  if (!value || typeof value !== "object") return false;
+  const collection = value as { type?: unknown; features?: unknown };
+  if (collection.type !== "FeatureCollection" || !Array.isArray(collection.features) || collection.features.length > 2000) return false;
+  return collection.features.every(feature => {
+    if (!feature || typeof feature !== "object") return false;
+    const record = feature as Partial<RoadFeature>;
+    const props = record.properties;
+    return record.type === "Feature" && record.geometry?.type === "LineString" &&
+      Array.isArray(record.geometry.coordinates) && record.geometry.coordinates.length >= 2 &&
+      record.geometry.coordinates.length <= 5000 &&
+      record.geometry.coordinates.every(validCoordinate) &&
+      !!props && typeof props.id === "string" && /^osm-way-\d+$/.test(props.id) &&
+      typeof props.name === "string" && typeof props.highway === "string" &&
+      props.verification === "osm_unverified" &&
+      typeof props.sourceUrl === "string" && /^https:\/\/www\.openstreetmap\.org\/way\/\d+$/.test(props.sourceUrl);
+  });
+}
