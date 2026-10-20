@@ -1,3 +1,4 @@
+import { canUseDemoOperatorApi } from "@/lib/demo-access";
 import { NextResponse } from "next/server";
 import { activateScenario, getCurrentScenario } from "@/lib/scenario-service";
 import { isDemoStage } from "@/lib/scenario-engine";
@@ -5,6 +6,7 @@ import { isDemoStage } from "@/lib/scenario-engine";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
+  if (!canUseDemoOperatorApi(request)) return NextResponse.json({ error: "Local demo operator access required." }, { status: 403 });
   try {
     const body: unknown = await request.json();
     if (typeof body !== "object" || body === null || !("stage" in body) || !isDemoStage(body.stage)) {

@@ -10,7 +10,7 @@ type Snapshot = {
 };
 const changeEvent = "township-demo-updated";
 
-export default function DemoController() {
+export default function DemoController({ operatorKey = "", readOnly = false }: { operatorKey?: string; readOnly?: boolean }) {
   const [scenario, setScenario] = useState<Snapshot | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -39,7 +39,7 @@ export default function DemoController() {
     try {
       const response = await fetch(
         next === "reset" ? "/api/scenarios/reset" : "/api/scenarios/activate",
-        { method: "POST", headers: { "Content-Type": "application/json" }, body: next === "reset" ? "{}" : JSON.stringify({ stage: next }) }
+        { method: "POST", headers: { "Content-Type": "application/json", "x-demo-operator-key": operatorKey }, body: next === "reset" ? "{}" : JSON.stringify({ stage: next }) }
       );
       const result = await response.json() as Snapshot & { error?: string };
       if (!response.ok) throw new Error(result.error ?? "Scenario update failed");
@@ -60,8 +60,10 @@ export default function DemoController() {
           <h2 className="mt-1 text-xl font-semibold text-navy">Five-stage 4R scenario controller</h2>
           <p className="mt-2 text-sm text-slate-600">Scripted, fictional inputs; both interfaces read the same SQLite records.</p>
         </div>
-        <button type="button" disabled={busy || !scenario} onClick={() => void change("reset")} className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold disabled:opacity-50"><RotateCcw size={15} /> Reset demo</button>
+        <button type="button" disabled={busy || !scenario || !operatorKey || readOnly} onClick={() => void change("reset")} className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold disabled:opacity-50"><RotateCcw size={15} /> Reset demo</button>
       </div>
+      {readOnly ? <p className="mt-2 text-sm text-slate-600">Resident view is read-only. Scenario changes are controlled in the local management demo.</p> : null}
+      {!readOnly && !operatorKey ? <p className="mt-2 text-sm text-amber-800">Enter your local operator key above to control the demo.</p> : null}
       {error ? <p className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-900" role="alert">{error}</p> : null}
       {scenario ? (
         <>
@@ -80,7 +82,7 @@ export default function DemoController() {
           </div>
           <p className="mt-3 text-xs text-slate-600">Risk explanation: {scenario.riskExplanation}. No actual measurements or forecast accuracy claims.</p>
           <div className="mt-4 flex justify-end">
-            <button type="button" disabled={busy || scenario.stage >= 5} onClick={() => void change(scenario.stage + 1)} className="inline-flex items-center gap-2 rounded-lg bg-teal-700 px-4 py-2 font-semibold text-white disabled:bg-slate-300">
+            <button type="button" disabled={busy || scenario.stage >= 5 || !operatorKey || readOnly} onClick={() => void change(scenario.stage + 1)} className="inline-flex items-center gap-2 rounded-lg bg-teal-700 px-4 py-2 font-semibold text-white disabled:bg-slate-300">
               {busy ? "Updating…" : scenario.stage >= 5 ? "Scenario complete" : "Next stage"} <ChevronRight size={17}/>
             </button>
           </div>
