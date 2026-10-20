@@ -1,0 +1,108 @@
+// Phase 1A: schematic-only prototype data; no real-world road safety claims.
+// All coordinates use local (x,y) schematic units, NOT GPS/WGS84.
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model DataSource {
+  id                 String         @id
+  name               String
+  classification     String         // illustrative | map_derived | government | reported
+  verificationStatus String         @default("unverified")
+  sourceUrl          String?
+  notes              String?
+  zones              TownshipZone[]
+  graphNodes         GraphNode[]
+  roadSegments       RoadSegment[]
+
+  @@map("data_sources")
+}
+
+model TownshipZone {
+  id               String         @id
+  name             String
+  description      String?
+  coordinateSystem String         @default("schematic_xy")
+  boundaryJson     String         // JSON array of [x,y] pairs; never interpret as GPS
+  sourceId         String
+  source           DataSource     @relation(fields: [sourceId], references: [id])
+  graphNodes       GraphNode[]
+  roadSegments     RoadSegment[]
+
+  @@index([sourceId])
+  @@map("township_zones")
+}
+
+model GraphNode {
+  id              String         @id
+  label           String
+  x               Float
+  y               Float
+  zoneId          String
+  isGateway       Boolean        @default(false)
+  sourceId        String
+  zone            TownshipZone   @relation(fields: [zoneId], references: [id])
+  source          DataSource     @relation(fields: [sourceId], references: [id])
+  outgoingRoads   RoadSegment[]  @relation("RoadFrom")
+  incomingRoads   RoadSegment[]  @relation("RoadTo")
+
+  @@index([zoneId])
+  @@index([sourceId])
+  @@map("graph_nodes")
+}
+
+model RoadSegment {
+  id              String            @id
+  label           String
+  zoneId          String
+  fromNodeId      String
+  toNodeId        String
+  corridorType    String            // ingress_egress_gateway | internal | park_trail
+  lengthUnits     Float             // schematic distance; NOT metres or driving time
+  currentStatus   String            @default("unknown")
+  sourceMode      String            @default("simulation")
+  statusUpdatedAt DateTime?
+  sourceId        String
+  zone            TownshipZone      @relation(fields: [zoneId], references: [id])
+  fromNode        GraphNode         @relation("RoadFrom", fields: [fromNodeId], references: [id])
+  toNode          GraphNode         @relation("RoadTo", fields: [toNodeId], references: [id])
+  source          DataSource        @relation(fields: [sourceId], references: [id])
+  statusEvents    RoadStatusEvent[]
+
+  @@index([zoneId])
+  @@index([fromNodeId])
+  @@index([toNodeId])
+  @@map("road_segments")
+}
+
+model RoadStatusEvent {
+  id          String      @id @default(cuid())
+  roadId      String
+  status      String
+  evidence    String?
+  reason      String
+  sourceMode  String
+  actorId     String?
+  observedAt  DateTime
+  createdAt   DateTime    @default(now())
+  road        RoadSegment @relation(fields: [roadId], references: [id])
+
+  @@index([roadId, observedAt])
+  @@map("road_status_events")
+}
+
+model ScenarioRun {
+  id           String   @id @default(cuid())
+  label        String
+  stage        Int
+  sourceMode   String   @default("simulation")
+  startedAt    DateTime @default(now())
+  completedAt  DateTime?
+
+  @@map("scenario_runs")
+}
