@@ -70,3 +70,7 @@ Report review now requires a private local `DEMO_OPERATOR_KEY`, and successful r
 ## Improved local controls
 
 The management page now has a single development-only operator key input. Residents can view the simulation but cannot advance it from their portal. Scenario updates, reviews and audit reads check the key on the server. See [operator demo notes](docs/operator-demo.md).
+
+## Management demo login
+
+Open `/management` and sign in with the private local `DEMO_OPERATOR_KEY` from your `.env` file. The dashboard appears after the key is checked, and **Log out** hides it again. This is a simple local demonstration, not a production account system. See [the login guide](docs/operator-demo.md).
