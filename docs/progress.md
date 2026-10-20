@@ -26,3 +26,10 @@
 - Added scripted operator closure events with **SIMULATED_DEMO_OPERATOR** as the recorded actor; stage 5 keeps confirmed demo closures closed.
 - Added a controller to resident and management views and road status colouring sourced from SQLite APIs.
 - **Pending:** local `npm test`, `npm run typecheck`, `npm run build`, interactive browser scenario run and review. Not field validated.
+
+## Phase 3 — Network connectivity analysis
+
+- Added a deterministic topological connectivity algorithm and unit tests.
+- Added read-only network assessment endpoint and a shared panel on both portal views.
+- Excludes reported-flooding links, confirmed closures and pedestrian-only trails; marks unknown/at-risk links as uncertain, not drivable.
+- **Owner verification pending:** unit tests, typecheck, build and map interaction. No real road or travel-safety assessment is claimed.
