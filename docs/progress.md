@@ -18,3 +18,11 @@
 - Added road/zone detail panel, selected styling, explicit provenance labels and keyboard selection lists.
 - Resident and management views share the same component but do not imply live conditions.
 - **Pending:** owner runs `npm install`, `npm test`, `npm run typecheck`, `npm run build` and browser verification. No local build was executed by the connected GitHub editing interface.
+
+## Phase 2 — Rules-based synthetic 4R scenario (implementation branch)
+
+- Added five deterministic stages with synthetic rainfall, retention and tide values.
+- Added explainable categoric risk evaluator, shared scenario APIs, and an explicit demo reset.
+- Added scripted operator closure events with **SIMULATED_DEMO_OPERATOR** as the recorded actor; stage 5 keeps confirmed demo closures closed.
+- Added a controller to resident and management views and road status colouring sourced from SQLite APIs.
+- **Pending:** local `npm test`, `npm run typecheck`, `npm run build`, interactive browser scenario run and review. Not field validated.

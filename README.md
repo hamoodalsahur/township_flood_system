@@ -52,3 +52,7 @@ Source-verified BBR geography, interactive map, flood risk rules, demo scenario 
 ## Development rules
 
 Use short-lived branches and pull requests, document local tests and do not commit secrets, personal resident locations, unauthorised imagery or invented live sensor values. The original v2.0 handoff remains planning input; any unverified facts and hypothetical staging sites in it must be reviewed before being represented as authentic records.
+
+## Phase 2 simulation
+
+The five-stage 4R demo is available on the resident and management pages. Use **Reset demo** to start at Stage 1 and advance sequentially. Numeric inputs, operator actions, road statuses and risk categories are controlled synthetic demonstration data, not real conditions. See [Phase 2 setup](docs/phase2-setup.md).

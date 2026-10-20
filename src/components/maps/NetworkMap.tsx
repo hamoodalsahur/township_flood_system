@@ -15,6 +15,14 @@ type Props = {
 const bounds: LatLngBoundsExpression = [[-6, -6], [106, 106]];
 const toPosition = (x: number, y: number): LatLngExpression => [y, x];
 
+const statusColors: Record<string,string> = {
+  unknown: "#64748b",
+  at_risk: "#d97706",
+  reported_flooding_unverified: "#f97316",
+  confirmed_closed: "#dc2626",
+  no_known_disruption: "#059669",
+};
+
 export default function NetworkMap({ zones, nodes, roads, selectedId, onSelect }: Props) {
   const nodeLookup = new Map(nodes.map(node => [node.id, node]));
   return (
@@ -59,14 +67,14 @@ export default function NetworkMap({ zones, nodes, roads, selectedId, onSelect }
             key={road.id}
             positions={[toPosition(start.x, start.y), toPosition(end.x, end.y)]}
             pathOptions={{
-              color: selected ? "#1d4ed8" : road.corridorType === "park_trail" ? "#7c3aed" : "#64748b",
+              color: selected ? "#1d4ed8" : (statusColors[road.status] ?? "#64748b"),
               weight: selected ? 8 : road.corridorType === "ingress_egress_gateway" ? 6 : 4,
               dashArray: road.corridorType === "park_trail" ? "5 7" : undefined,
               opacity: 0.95,
             }}
             eventHandlers={{ click: () => onSelect(road.id) }}
           >
-            <Tooltip sticky>{road.label} · status unknown</Tooltip>
+            <Tooltip sticky>{road.label} · {road.status.replaceAll("_", " ")}</Tooltip>
           </Polyline>
         );
       })}
