@@ -1,56 +1,54 @@
 # Township Flood Intelligence & Road Accessibility System
 
-Prototype for the Sime Darby Property University Hackathon, using Bandar Bukit Raja (BBR) as an illustrative study area.
+Sime Darby Property University Hackathon prototype with Bandar Bukit Raja as a research focus.
 
-> **Development status:** Milestone 0 — application foundation. The website is **not** a live flood warning, road-safety, evacuation or navigation service. Any future flood scenarios will be visibly labelled **SIMULATION — NOT LIVE CONDITIONS**.
+> **Status:** Phase 1A data foundation. This is **NOT** a live flood warning, road-navigation, evacuation or safety system. Any seeded road or zone geography is an explicitly fictional **SCHEMATIC DEMONSTRATION**, not real BBR mapping.
 
-## Project goal
+## What exists today
 
-Translate township flood information into evidence-labelled road-access insights for residents, alongside monitoring and incident-verification workflows for township operators. The concept complements physical flood-mitigation works; it does not replace official warnings or emergency services.
+- Next.js / TypeScript / Tailwind app with landing page, resident and management placeholders.
+- SQLite / Prisma schema and an idempotent seed for 4 *illustrative* zones, 8 test nodes and 10 connected road/trail links.
+- Provenance/source labels and unknown status defaults (no claimed open or safe roads).
+- Read-only JSON endpoints for zones and roads; test checks for graph consistency.
 
-**Primary interfaces:** resident portal and management dashboard.
+## Quick start on Windows
 
-## Local setup
+Prerequisites: Node.js LTS, npm and Git.
 
-Prerequisites: Node.js 20.9+ (Node 22 LTS recommended), npm and Git.
-
-```bash
+```powershell
+Copy-Item .env.example .env
 npm install
+npm run db:generate
+npm run db:push
+npm run db:seed
+npm test
+npm run typecheck
+npm run build
 npm run dev
 ```
 
-Visit `http://localhost:3000`. The links lead to `/resident` and `/management`.
+Visit:
+- `http://localhost:3000` — project landing page
+- `http://localhost:3000/resident` — resident portal placeholder
+- `http://localhost:3000/management` — operator dashboard placeholder
+- `http://localhost:3000/api/zones` — seeded schematic zones JSON
+- `http://localhost:3000/api/roads` — seeded schematic road graph JSON
 
-Optional checks:
+If the local .env file already exists, check it rather than overwriting it.
 
-```bash
-npm run typecheck
-npm run build
-```
+## Planned next phases
 
-**This initial commit includes interface scaffolds only**. The maps, database, gateway statuses, risk engine, reports and scenario controls are scheduled for later milestones and are **not yet implemented**.
-
-## Team workflow
-
-- Open a GitHub Issue describing an observable feature and acceptance test.
-- Use a feature branch, for example `feature/bbr-map`.
-- Keep changes focused; open a pull request with test notes.
-- Do not commit API keys, personal data, secret values, research PDFs without permission, or private location coordinates.
-- Label all synthetic/historical/official inputs with their actual provenance.
+Source-verified BBR geography, interactive map, flood risk rules, demo scenario controller, report verification, alerts, road connectivity and analytics. **These are not implemented yet.**
 
 ## Documentation
 
-- [Development roadmap](docs/roadmap.md)
-- [Architecture and scope](docs/architecture.md)
+- [Phase 1A setup and troubleshooting](docs/phase1a-setup.md)
+- [Source and geography register](docs/source-register.md)
+- [Roadmap](docs/roadmap.md)
+- [Architecture](docs/architecture.md)
 - [Data integrity and safety](docs/data-integrity.md)
 - [Progress log](docs/progress.md)
 
-The comprehensive source brief is maintained separately as *Township Flood Intelligence & Road Accessibility System — Standalone AI Handoff v2.0*. Some detailed geographic and external-data assertions in that brief still require verification before being seeded as factual records.
+## Development rules
 
-## Research and official sources
-
-- [Sime Darby Property](https://www.simedarbyproperty.com/)
-- [JPS Public InfoBanjir](https://publicinfobanjir.water.gov.my/)
-- [METMalaysia](https://www.met.gov.my/)
-
-Research and source links do not imply that this prototype has direct access to live data.
+Use short-lived branches and pull requests, document local tests and do not commit secrets, personal resident locations, unauthorised imagery or invented live sensor values. The original v2.0 handoff remains planning input; any unverified facts and hypothetical staging sites in it must be reviewed before being represented as authentic records.
