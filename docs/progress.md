@@ -29,3 +29,7 @@ Added a form for fictional resident reports and a management queue to corroborat
 ## Before we deploy
 
 Finish the remaining test checklists, add authenticated operator access, review our data sources and make sure the demo-only APIs aren't public. The feature pull requests are still awaiting integration into `main`.
+
+## Phase 5 — Local review protection and history
+
+Added a private local demo key check to the report review API. Every completed review is stored with a matching audit entry in one transaction, and management can read the recent review history. These controls are **development-only**, not production authentication. Local tests are pending.

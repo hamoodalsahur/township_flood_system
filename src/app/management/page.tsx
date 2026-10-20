@@ -5,6 +5,7 @@ import MapWorkspace from "@/components/maps/MapWorkspace";
 import DemoController from "@/components/scenarios/DemoController";
 import ConnectivityPanel from "@/components/network/ConnectivityPanel";
 import ReportWorkspace from "@/components/reports/ReportWorkspace";
+import AuditPanel from "@/components/audit/AuditPanel";
 
 export default function ManagementPage() {
   return (
@@ -22,6 +23,7 @@ export default function ManagementPage() {
         <MapWorkspace variant="management" />
         <ConnectivityPanel />
         <ReportWorkspace view="management" />
+        <AuditPanel />
       </div>
     </main>
   );
