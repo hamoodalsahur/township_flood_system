@@ -49,6 +49,7 @@ async function main() {
       lat < bounds.south - 0.02 || lat > bounds.north + 0.02 ||
       lon < bounds.west - 0.02 || lon > bounds.east + 0.02
     )) continue;
+    const tags = element.tags ?? {};
     features.push({
       type: "Feature",
       geometry: { type: "LineString", coordinates: coords },
@@ -59,8 +60,8 @@ async function main() {
         sourceUrl: `https://www.openstreetmap.org/way/${element.id}`,
         verification: "osm_unverified",
         ...Object.fromEntries(["oneway", "bridge", "tunnel", "layer", "access", "motor_vehicle", "junction"]
-          .filter(tag => typeof element.tags?.[tag] === "string" && element.tags[tag].length <= 120)
-          .map(tag => [tag, element.tags![tag]])),
+          .filter(tag => typeof tags[tag] === "string" && tags[tag].length <= 120)
+          .map(tag => [tag, tags[tag]])),
       },
     });
   }
