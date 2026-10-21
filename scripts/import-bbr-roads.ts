@@ -58,6 +58,9 @@ async function main() {
         highway: element.tags?.highway || "unknown",
         sourceUrl: `https://www.openstreetmap.org/way/${element.id}`,
         verification: "osm_unverified",
+        ...Object.fromEntries(["oneway", "bridge", "tunnel", "layer", "access", "motor_vehicle", "junction"]
+          .filter(tag => typeof element.tags?.[tag] === "string" && element.tags[tag].length <= 120)
+          .map(tag => [tag, element.tags![tag]])),
       },
     });
   }
