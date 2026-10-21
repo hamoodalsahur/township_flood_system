@@ -1,6 +1,8 @@
 "use client";
 
-import { useMapEvents, MapContainer, TileLayer, CircleMarker, Tooltip, ZoomControl, Polyline, useMap } from "react-leaflet";
+import { useMapEvents, MapContainer, TileLayer, CircleMarker, Tooltip, ZoomControl, Polyline, useMap, Marker } from "react-leaflet";
+import { divIcon } from "leaflet";
+import { HAZARD_SYMBOLS } from "@/lib/hazard-symbols";
 import { useEffect } from "react";
 import { bbrReferencePoints, isValidLonLat } from "@/lib/bbr-reference";
 import { roadStyle } from "@/lib/bbr-road-display";
@@ -30,6 +32,17 @@ function FocusSelectedGroup({ roads, focusGroup }: { roads: RoadFeature[]; focus
 function LocationPicker({ onChooseLocation }: {onChooseLocation?: (coordinates:[number,number])=>void}) {
   useMapEvents({ click(event) { onChooseLocation?.([event.latlng.lng,event.latlng.lat]); } });
   return null;
+}
+function markerIcon(category: keyof typeof HAZARD_SYMBOLS, selected: boolean) {
+  const info = HAZARD_SYMBOLS[category];
+  // Only fixed, trusted symbols and colors are interpolated; no report text or user HTML.
+  return divIcon({
+    className: "hazard-map-marker",
+    html: `<span class="hazard-map-marker__symbol${selected ? " hazard-map-marker__symbol--selected" : ""}" style="--hazard-color:${info.color}" aria-hidden="true">${info.symbol}</span>`,
+    iconSize: [42, 46],
+    iconAnchor: [21, 43],
+    popupAnchor: [0, -40],
+  });
 }
 const features = bbrReferencePoints.features.filter(feature => isValidLonLat(feature.geometry.coordinates));
 
@@ -91,12 +104,13 @@ export default function GeographicReferenceMap({
           );
         })}
         {hazards.map(hazard => (
-          <CircleMarker key={hazard.id} center={[hazard.coordinates[1], hazard.coordinates[0]]}
-            radius={selectedHazardId === hazard.id ? 12 : 9}
+          <Marker key={hazard.id} position={[hazard.coordinates[1], hazard.coordinates[0]]}
+            icon={markerIcon(hazard.category, selectedHazardId === hazard.id)}
             eventHandlers={{ click: () => onSelectHazard(hazard.id) }}
-            pathOptions={{ color: "#ffffff", weight: 3, fillColor: "#dc6c19", fillOpacity: 0.95 }}>
-            <Tooltip sticky>DEMO hazard · {hazard.title} · click for details</Tooltip>
-          </CircleMarker>
+            keyboard
+            title={`Fictional ${HAZARD_SYMBOLS[hazard.category].label} report. Click for details.`}>
+            <Tooltip direction="top" offset={[0, -32]}>DEMO · {HAZARD_SYMBOLS[hazard.category].label} · {hazard.title}</Tooltip>
+          </Marker>
         ))}
         {features.map(feature => {
           const [longitude, latitude] = feature.geometry.coordinates;
