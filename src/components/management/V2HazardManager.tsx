@@ -17,6 +17,17 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
   const [pairHistory,setPairHistory]=useState<Record<string,{candidateId:string;judgement:string;note:string;updatedAt:string}[]>>({});
   const [pairBusy,setPairBusy]=useState<string|null>(null);
   const [pairStatus,setPairStatus]=useState<Record<string,string>>({});
+  const [feedbackSummary,setFeedbackSummary]=useState<{displayed:number;sameEvent:number;differentEvent:number}|null>(null);
+  async function loadFeedbackSummary() {
+    try {
+      const response=await fetch("/api/v2/management/ai-feedback-summary",{
+        headers:{"x-demo-operator-key":operatorKey},cache:"no-store"
+      });
+      if(!response.ok)return;
+      const data=await response.json() as {displayed:number;sameEvent:number;differentEvent:number};
+      setFeedbackSummary(data);
+    }catch{ /* Summary is supplemental; core reports still load. */ }
+  }
   async function loadPairHistory(reportId:string) {
     const response=await fetch("/api/v2/hazards/"+reportId+"/ai-feedback",{
       headers:{"x-demo-operator-key":operatorKey},cache:"no-store"
@@ -36,6 +47,7 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
       const data=await response.json() as {error?:string};
       if(!response.ok)throw Error(data.error??"Could not record feedback");
       await loadPairHistory(reportId);
+      await loadFeedbackSummary();
       setPairStatus(old=>({...old,[key]:"Saved as a fictional reviewer judgement."}));
     }catch(error){setPairStatus(old=>({...old,[key]:error instanceof Error?error.message:"Could not record feedback"}));}
     finally{setPairBusy(null);}
@@ -67,6 +79,7 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
       if(!r.ok) throw Error("Could not load demo hazards. Run npm run db:push.");
       const data=await r.json() as {reports:RecordItem[]};
       setItems(data.reports);
+      await loadFeedbackSummary();
     } catch(e){ setMessage(e instanceof Error?e.message:"Unable to load demo reports"); }
   }
   useEffect(()=>{void reload();},[]);
@@ -92,6 +105,14 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
     </div>
     <p className="mt-2 text-sm text-slate-600">Separate from the old demonstration flood report queue. Includes rejected reports for management history. Corroboration does not verify a road closure.</p>
     {message?<p role="status" className="mt-3 text-sm text-teal-800">{message}</p>:null}
+    <div className="mt-4 rounded-xl border border-indigo-200 bg-indigo-50 p-3 text-xs text-indigo-950">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="font-bold">Human incident-pair feedback (fictional study)</p>
+        <button type="button" onClick={()=>void loadFeedbackSummary()} className="rounded-lg border border-indigo-300 bg-white px-3 py-1.5 font-semibold">Refresh feedback counts</button>
+      </div>
+      {feedbackSummary?<p className="mt-2">Last {feedbackSummary.displayed} recorded pair decision(s): {feedbackSummary.sameEvent} same-event and {feedbackSummary.differentEvent} different-event.</p>:<p className="mt-2">No feedback summary available yet.</p>}
+      <p className="mt-1">These are operator labels, not measured AI accuracy or verified real incidents. Use the local AI benchmark for preliminary accuracy testing.</p>
+    </div>
     <div className="mt-4 space-y-3">
       {items.length===0?<p className="text-sm text-slate-500">No geographic demo reports yet. Submit one from the resident map.</p>:null}
       {items.map(item=><article key={item.id} className="rounded-xl border border-slate-200 p-4">
