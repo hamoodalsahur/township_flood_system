@@ -45,11 +45,13 @@ export default function GeographicReferenceWorkspace() {
   const [sendingReport, setSendingReport] = useState(false);
   const [reportMessage, setReportMessage] = useState("");
   const [evidenceFile, setEvidenceFile] = useState<File | null>(null);
+  const [photoApprovedIds, setPhotoApprovedIds] = useState<string[]>([]);
   async function loadStoredHazards() {
     try {
       const response=await fetch("/api/v2/hazards",{cache:"no-store"});
       if(!response.ok) throw Error("Demo incident API unavailable. Run npm run db:push.");
-      const payload=await response.json() as {reports:{id:string;category:HazardCategory;description:string;longitude:number;latitude:number;impact:string;reviewState:string;createdAt:string}[]};
+      const payload=await response.json() as {reports:{id:string;category:HazardCategory;description:string;longitude:number;latitude:number;impact:string;reviewState:string;createdAt:string;hasApprovedPhoto:boolean}[]};
+      setPhotoApprovedIds(payload.reports.filter(item=>item.hasApprovedPhoto).map(item=>item.id));
       setStoredHazards(payload.reports.map(item=>({
         id:item.id,category:item.category,title:CATEGORY_LABELS[item.category]+" (submitted demo)",
         description:item.description,coordinates:[item.longitude,item.latitude],
@@ -232,6 +234,7 @@ export default function GeographicReferenceWorkspace() {
               <h3 className="text-base font-bold"><span className="mr-2" aria-hidden="true">{HAZARD_SYMBOLS[selectedHazard.category].symbol}</span>{selectedHazard.title}</h3>
               <p className="text-xs font-semibold text-slate-600">{CATEGORY_LABELS[selectedHazard.category]} · {selectedHazard.impact.replaceAll("_"," ")}</p>
               <p className="text-sm leading-5">{selectedHazard.description}</p>
+              {photoApprovedIds.includes(selectedHazard.id) ? <div className="rounded-xl border border-teal-200 bg-teal-50 p-2"><img src={`/api/v2/hazards/${selectedHazard.id}/evidence/approved`} alt={`Operator-approved fictional evidence for ${CATEGORY_LABELS[selectedHazard.category]}`} loading="lazy" className="max-h-64 w-full rounded-lg object-contain" /><p className="mt-2 text-xs font-semibold text-teal-900">Operator-approved sample image · fictional report, not verification of road conditions</p></div> : null}
               <p className="text-xs text-slate-500">Illustrative map position only, not a real reported incident. No verified road access impact.</p>
               <button type="button" onClick={() => setSelectedHazardId(null)} className="rounded-lg border border-slate-200 px-3 py-1 text-xs font-semibold">Close example</button>
             </div>

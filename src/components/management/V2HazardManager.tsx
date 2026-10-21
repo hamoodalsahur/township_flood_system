@@ -5,6 +5,7 @@ type RecordItem={id:string;category:string;description:string;impact:string;revi
 export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
   const [items,setItems]=useState<RecordItem[]>([]);
   const [notes,setNotes]=useState<Record<string,string>>({});
+  const [publishPhotos,setPublishPhotos]=useState<Record<string,boolean>>({});
   const [message,setMessage]=useState("");
   const [busy,setBusy]=useState(false);
   const [evidenceUrls,setEvidenceUrls]=useState<Record<string,string>>({});
@@ -32,7 +33,7 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
     try {
       const response=await fetch(`/api/v2/hazards/${id}/review`,{
         method:"PATCH",headers:{"Content-Type":"application/json","x-demo-operator-key":operatorKey},
-        body:JSON.stringify({decision,note:notes[id]??""})
+        body:JSON.stringify({decision,note:notes[id]??"",publishPhoto:decision==="corroborated"&&publishPhotos[id]===true})
       });
       const result=await response.json() as {error?:string};
       if(!response.ok)throw Error(result.error??"Review failed");
@@ -67,6 +68,7 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
           <label className="block text-xs font-semibold">Review reason
             <input value={notes[item.id]??""} onChange={e=>setNotes(old=>({...old,[item.id]:e.target.value}))} maxLength={400} className="mt-1 block w-full rounded-lg border border-slate-300 p-2" placeholder="At least 8 characters" />
           </label>
+          <label className="flex items-start gap-2 text-xs text-slate-700"><input type="checkbox" checked={publishPhotos[item.id]===true} onChange={e=>setPublishPhotos(prev=>({...prev,[item.id]:e.target.checked}))} /> Separately approve the attached sample photo for public demonstration (only if no identifiable people or private details). Otherwise keep it private.</label>
           <div className="flex gap-2">
             <button type="button" disabled={busy||(notes[item.id]??"").trim().length<8} onClick={()=>void review(item.id,"corroborated")} className="rounded-lg bg-teal-800 px-3 py-2 text-xs font-bold text-white disabled:opacity-40">Corroborate report</button>
             <button type="button" disabled={busy||(notes[item.id]??"").trim().length<8} onClick={()=>void review(item.id,"rejected")} className="rounded-lg border border-slate-300 px-3 py-2 text-xs disabled:opacity-40">Reject report</button>
