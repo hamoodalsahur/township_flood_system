@@ -1,10 +1,12 @@
 "use client";
 import { useEffect, useState } from "react";
-import { CATEGORY_LABELS, HAZARD_CATEGORIES, type HazardCategory } from "@/lib/demo-hazards";
-type RecordItem={id:string;category:string;description:string;impact:string;reviewState:string;createdAt:string};
+import { CATEGORY_LABELS, type HazardCategory } from "@/lib/demo-hazards";
+import { relatedReports } from "@/lib/v2-related-reports";
+type RecordItem={id:string;category:string;description:string;impact:string;reviewState:string;createdAt:string;latitude:number;longitude:number};
 export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
   const [items,setItems]=useState<RecordItem[]>([]);
   const [notes,setNotes]=useState<Record<string,string>>({});
+  const [publishPhotos,setPublishPhotos]=useState<Record<string,boolean>>({});
   const [message,setMessage]=useState("");
   const [busy,setBusy]=useState(false);
   const [evidenceUrls,setEvidenceUrls]=useState<Record<string,string>>({});
@@ -32,7 +34,7 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
     try {
       const response=await fetch(`/api/v2/hazards/${id}/review`,{
         method:"PATCH",headers:{"Content-Type":"application/json","x-demo-operator-key":operatorKey},
-        body:JSON.stringify({decision,note:notes[id]??""})
+        body:JSON.stringify({decision,note:notes[id]??"",publishPhoto:decision==="corroborated"&&publishPhotos[id]===true})
       });
       const result=await response.json() as {error?:string};
       if(!response.ok)throw Error(result.error??"Review failed");
@@ -54,6 +56,7 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
       {items.map(item=><article key={item.id} className="rounded-xl border border-slate-200 p-4">
         <div className="flex flex-wrap items-center justify-between gap-2"><strong>{CATEGORY_LABELS[item.category as HazardCategory]??item.category}</strong><span className="text-xs font-bold uppercase text-orange-700">{item.reviewState} · DEMO</span></div>
         <p className="mt-1 text-sm text-slate-700">{item.description}</p>
+        {item.reviewState==="unverified" ? <p className="mt-2 rounded-lg bg-indigo-50 p-3 text-xs text-indigo-900">Rule-based triage (not AI): {relatedReports(item,items).priority.replaceAll("_"," ")}. Possible related report IDs: {relatedReports(item,items).ids.join(", ")||"none"}. Operator review required.</p> : null}
         <p className="mt-1 text-xs text-slate-500">Submitted impact: {item.impact.replaceAll("_"," ")} · {new Date(item.createdAt).toLocaleString()}</p>
         <div className="mt-3">
           <button type="button" onClick={()=>void viewEvidence(item.id)} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700">View attached private photo (if any)</button>
@@ -67,6 +70,7 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
           <label className="block text-xs font-semibold">Review reason
             <input value={notes[item.id]??""} onChange={e=>setNotes(old=>({...old,[item.id]:e.target.value}))} maxLength={400} className="mt-1 block w-full rounded-lg border border-slate-300 p-2" placeholder="At least 8 characters" />
           </label>
+          <label className="flex items-start gap-2 text-xs text-slate-700"><input type="checkbox" checked={publishPhotos[item.id]===true} onChange={e=>setPublishPhotos(prev=>({...prev,[item.id]:e.target.checked}))} /> Separately approve the attached sample photo for public demonstration (only if no identifiable people or private details). Otherwise keep it private.</label>
           <div className="flex gap-2">
             <button type="button" disabled={busy||(notes[item.id]??"").trim().length<8} onClick={()=>void review(item.id,"corroborated")} className="rounded-lg bg-teal-800 px-3 py-2 text-xs font-bold text-white disabled:opacity-40">Corroborate report</button>
             <button type="button" disabled={busy||(notes[item.id]??"").trim().length<8} onClick={()=>void review(item.id,"rejected")} className="rounded-lg border border-slate-300 px-3 py-2 text-xs disabled:opacity-40">Reject report</button>

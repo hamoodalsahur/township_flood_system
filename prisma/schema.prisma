@@ -166,7 +166,7 @@ model HazardEvidence {
   mimeType    String
   base64Data  String
   bytes       Int
-  status      String       @default("private_unreviewed")
+  status      String       @default("private_unreviewed") // private_unreviewed | approved_public_demo | private_rejected
   createdAt   DateTime     @default(now())
   @@map("hazard_evidence")
 }
