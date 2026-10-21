@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import {test} from "node:test";
-import {EVALUATION_PAIRS,MALAY_LANGUAGE_CASE_IDS} from "../src/lib/v2-evaluation-fixtures";
-import {evaluatePairs} from "../src/lib/v2-ai-evaluation";
+import {EVALUATION_PAIRS,MALAY_LANGUAGE_CASE_IDS,HOLDOUT_CASE_IDS} from "../src/lib/v2-evaluation-fixtures";
+import {evaluatePairs,selectStudyThreshold} from "../src/lib/v2-ai-evaluation";
 import {HAZARD_CATEGORIES} from "../src/lib/demo-hazards";
 test("fictional evaluation covers hazard categories, languages and hard negatives",()=>{
  assert.equal(EVALUATION_PAIRS.length,42);
@@ -25,4 +25,23 @@ test("precision recall and F1 are calculated from explicit false positives and n
 test("benchmark guards against invalid thresholds and model vectors",()=>{
  assert.throws(()=>evaluatePairs([],2));
  assert.throws(()=>evaluatePairs([{id:"a",sameEvent:true,score:NaN}],0.78));
+});
+
+test("predeclared holdout contains balanced labels across every hazard category",()=>{
+ const ids=new Set<string>(HOLDOUT_CASE_IDS);
+ const split=EVALUATION_PAIRS.filter(p=>ids.has(p.id));
+ assert.equal(ids.size,14);assert.equal(split.length,14);
+ assert.equal(split.filter(p=>p.sameEvent).length,7);
+ assert.equal(split.filter(p=>!p.sameEvent).length,7);
+ for(const category of HAZARD_CATEGORIES)assert.equal(split.filter(p=>p.category===category).length,2);
+});
+test("threshold calibration uses training examples only",()=>{
+ const calibration=[
+  {id:"positive",sameEvent:true,score:0.84},
+  {id:"negative",sameEvent:false,score:0.73}
+ ];
+ const optimal=selectStudyThreshold(calibration,[0.70,0.75,0.85]);
+ assert.equal(optimal.threshold,0.75);
+ assert.equal(evaluatePairs([{id:"heldout",sameEvent:false,score:0.79}],optimal.threshold).fp,1);
+ assert.throws(()=>selectStudyThreshold([],[]));
 });

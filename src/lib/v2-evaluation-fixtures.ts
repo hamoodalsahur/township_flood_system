@@ -51,3 +51,10 @@ export const MALAY_LANGUAGE_CASE_IDS = [
  "tree-03","tree-06","flood-02","flood-06","hole-02","hole-06",
  "work-03","work-06","block-03","block-06","storm-02","storm-06","other-06"
 ] as const;
+
+/** Pre-registered synthetic holdout: one positive and one negative from each category. */
+export const HOLDOUT_CASE_IDS=[
+ "tree-03","tree-04","flood-02","flood-05","hole-01","hole-06",
+ "work-03","work-04","block-02","block-06","storm-01","storm-06",
+ "other-03","other-05"
+] as const;

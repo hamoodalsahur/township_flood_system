@@ -5,7 +5,7 @@ This milestone provides a **reproducible, synthetic** local benchmark for Ollama
 ## What is added
 
 1. `npm run ai:evaluate`: uses the locally running Ollama `nomic-embed-text` embedding model to compare 42 pre-labelled, **entirely fictional** report pairs. There are 21 intended same-event and 21 different-event pairs, with English, Malay, and mixed-language cases spanning all seven hazard categories. It uses batches of 20 to reduce GPU load.
-2. A synthetic benchmark prints true positives (TP), false positives (FP), true negatives (TN), false negatives (FN), precision, recall, F1 and accuracy for exploratory cosine-similarity thresholds. The 0.78 threshold currently used by the live demo is explicitly highlighted with false-positive and false-negative case IDs. The CLI additionally prints embedding time and exploratory category and Malay-containing versus English-only language slices.
+2. A synthetic benchmark prints true positives (TP), false positives (FP), true negatives (TN), false negatives (FN), precision, recall, F1 and accuracy for exploratory cosine-similarity thresholds. The 0.78 threshold currently used by the live demo is explicitly highlighted with false-positive and false-negative case IDs. The CLI additionally prints embedding time and exploratory category and Malay-containing versus English-only language slices. It reserves 14 pre-selected synthetic examples as a holdout, chooses a threshold using the other 28 labelled examples, then reports the held-out outcome separately.
 3. In `/management`, operators can open **Run AI comparison**, then label a suggested fictional pair as **same fictional event** or **different events**, with an 8–400-character explanation. Human decisions are stored separately and updated when a reviewer revisits a pair. A corresponding audit entry records each decision.
 4. The operator-only queue now shows previously rejected fictional reports and the previous review reason. These still do **not** appear on the public map. A summary shows recent counts of human pair decisions, *not* accuracy metrics.
 5. No model may independently verify a report, publish a photo, change a road state or initiate real-world routing.
@@ -34,7 +34,7 @@ This milestone provides a **reproducible, synthetic** local benchmark for Ollama
 - **F1** = harmonic mean of precision and recall.
 - **Accuracy** = (TP + TN) / all pairs.
 - A **cosine similarity score is not a calibrated probability**, even if displayed as a percentage.
-- Changing a threshold based on the same 42 examples does **not** establish generalizable model quality. For an academic claim, construct a separate unseen test split, recruit independent reviewers to confirm labels, assess regional Malay/English expressions, measure latency, and separately evaluate the geographic/temporal filtering.
+- Although this script now reports a small pre-declared holdout (14 pairs) after calibrating on 28 examples, its holdout is still synthetic and drawn from the same hand-written dataset. Neither that result nor selecting a threshold is proof of real-world model quality. For an academic claim, recruit independent reviewers, obtain geographically independent cases with separate labels, assess regional Malay/English expressions, measure latency, and evaluate geographic/temporal filtering separately.
 - Human judgements collected only for proposed matches are subject to **selection bias**. Their count is not a measured precision score and does not replace the labelled benchmark.
 
 ## Security/privacy limitations

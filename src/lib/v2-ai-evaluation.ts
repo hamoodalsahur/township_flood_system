@@ -19,3 +19,11 @@ export function evaluatePairs(pairs:readonly ScoredPair[],threshold:number) {
   precision,recall,f1:precision+recall===0?0:2*precision*recall/(precision+recall),
   accuracy:pairs.length===0?0:(tp+tn)/pairs.length,falsePositiveIds,falseNegativeIds};
 }
+
+/** Select a threshold using calibration data only, never by looking at the holdout labels. */
+export function selectStudyThreshold(calibration:readonly ScoredPair[],thresholds:readonly number[]=STUDY_THRESHOLDS) {
+ if(calibration.length===0||thresholds.length===0)throw Error("Calibration examples are required");
+ const options=thresholds.map(t=>evaluatePairs(calibration,t));
+ options.sort((a,b)=>b.f1-a.f1||b.precision-a.precision||b.threshold-a.threshold);
+ return options[0];
+}

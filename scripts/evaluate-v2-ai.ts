@@ -1,8 +1,8 @@
 /** Locally evaluate actual Ollama embeddings using reproducible, invented labels. */
-import {EVALUATION_PAIRS,MALAY_LANGUAGE_CASE_IDS} from "../src/lib/v2-evaluation-fixtures";
+import {EVALUATION_PAIRS,MALAY_LANGUAGE_CASE_IDS,HOLDOUT_CASE_IDS} from "../src/lib/v2-evaluation-fixtures";
 import {cosineSimilarity} from "../src/lib/v2-semantic-similarity";
 import {embedDescriptions} from "../src/lib/v2-embedding-provider";
-import {evaluatePairs,STUDY_THRESHOLDS} from "../src/lib/v2-ai-evaluation";
+import {evaluatePairs,selectStudyThreshold,STUDY_THRESHOLDS} from "../src/lib/v2-ai-evaluation";
 
 async function main(){
  const inputs=EVALUATION_PAIRS.flatMap(c=>[
@@ -27,6 +27,20 @@ async function main(){
  const results=STUDY_THRESHOLDS.map(t=>evaluatePairs(scores,t));
  console.table(results.map(r=>({threshold:r.threshold,tp:r.tp,fp:r.fp,tn:r.tn,fn:r.fn,
   precision:r.precision.toFixed(3),recall:r.recall.toFixed(3),f1:r.f1.toFixed(3),accuracy:r.accuracy.toFixed(3)})));
+ const holdoutIds=new Set<string>(HOLDOUT_CASE_IDS);
+ const calibration=scores.filter(s=>!holdoutIds.has(s.id));
+ const holdout=scores.filter(s=>holdoutIds.has(s.id));
+ const selected=selectStudyThreshold(calibration);
+ const heldoutMetrics=evaluatePairs(holdout,selected.threshold);
+ console.log("Exploratory development/calibration split:",calibration.length,"pairs; held-out set:",holdout.length,"pairs");
+ console.log("Threshold selected without using holdout labels:",selected.threshold);
+ console.log("HELD-OUT SYNTHETIC RESULT:",{
+   tp:heldoutMetrics.tp,fp:heldoutMetrics.fp,tn:heldoutMetrics.tn,fn:heldoutMetrics.fn,
+   precision:Number(heldoutMetrics.precision.toFixed(3)),recall:Number(heldoutMetrics.recall.toFixed(3)),
+   f1:Number(heldoutMetrics.f1.toFixed(3)),accuracy:Number(heldoutMetrics.accuracy.toFixed(3))
+ });
+ console.log("Held-out errors:",JSON.stringify({falsePositiveIds:heldoutMetrics.falsePositiveIds,falseNegativeIds:heldoutMetrics.falseNegativeIds}));
+ console.log("The live demo still uses its existing 0.78 threshold; the chosen threshold is a research suggestion only.");
  const operating=results.find(r=>r.threshold===0.78);
  if(operating)console.log("Current 0.78 threshold errors:",JSON.stringify({falsePositiveIds:operating.falsePositiveIds,falseNegativeIds:operating.falseNegativeIds}));
  const malayCases=new Set<string>(MALAY_LANGUAGE_CASE_IDS);
