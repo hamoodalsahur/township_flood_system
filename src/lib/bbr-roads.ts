@@ -8,6 +8,8 @@ export type RoadFeature = {
     highway: string;
     sourceUrl: string;
     verification: "osm_unverified";
+    /** Original OSM node IDs in geometry-coordinate order, when preserved by the importer. */
+    osmNodeIds?: number[];
     oneway?: string;
     bridge?: string;
     tunnel?: string;
@@ -39,6 +41,11 @@ export function validRoadCollection(value: unknown): value is RoadCollection {
       !!props && typeof props.id === "string" && /^osm-way-\d+$/.test(props.id) &&
       typeof props.name === "string" && typeof props.highway === "string" &&
       props.verification === "osm_unverified" &&
+      (props.osmNodeIds === undefined || (
+        Array.isArray(props.osmNodeIds) &&
+        props.osmNodeIds.length === record.geometry.coordinates.length &&
+        props.osmNodeIds.every(id => Number.isSafeInteger(id) && id > 0)
+      )) &&
       ["oneway", "bridge", "tunnel", "layer", "access", "motor_vehicle", "junction"].every(tag => {
         const value = (props as unknown as Record<string, unknown>)[tag];
         return value === undefined || (typeof value === "string" && value.length <= 120);

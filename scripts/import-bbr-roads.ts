@@ -7,18 +7,13 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { validRoadCollection, type RoadCollection, type RoadFeature } from "../src/lib/bbr-roads";
+import { convertOsmWay, RESEARCH_BOUNDS, type OsmWay } from "../src/lib/bbr-osm-import";
 
-type OsmWay = {
-  type: string;
-  id: number;
-  tags?: Record<string, string>;
-  geometry?: { lat: number; lon: number }[];
-};
 type OverpassResponse = { elements?: OsmWay[] };
 
 // A small *research window* close to the mapped BBR sales-gallery reference.
 // Not the complete township boundary. Overpass uses south,west,north,east.
-const bounds = { south: 3.075, west: 101.42, north: 3.095, east: 101.45 };
+const bounds = RESEARCH_BOUNDS;
 const query = `[out:json][timeout:30];way["highway"]["highway"!~"footway|path|steps|cycleway|pedestrian|construction|proposed"](${bounds.south},${bounds.west},${bounds.north},${bounds.east});out geom;`;
 const endpoint = "https://overpass-api.de/api/interpreter";
 
@@ -41,30 +36,13 @@ async function main() {
   if (!Array.isArray(data.elements)) throw new Error("Unexpected Overpass response; import stopped.");
 
   const features: RoadFeature[] = [];
+  let skipped = 0;
   for (const element of data.elements) {
-    if (element.type !== "way" || !Number.isSafeInteger(element.id) || !element.geometry) continue;
-    const coords = element.geometry.map(point => [point.lon, point.lat] as [number, number]);
-    if (coords.length < 2 || coords.length > 5000 || coords.some(([lon, lat]) =>
-      !Number.isFinite(lon) || !Number.isFinite(lat) ||
-      lat < bounds.south - 0.02 || lat > bounds.north + 0.02 ||
-      lon < bounds.west - 0.02 || lon > bounds.east + 0.02
-    )) continue;
-    const tags = element.tags ?? {};
-    features.push({
-      type: "Feature",
-      geometry: { type: "LineString", coordinates: coords },
-      properties: {
-        id: `osm-way-${element.id}`,
-        name: element.tags?.name || "Unnamed mapped road",
-        highway: element.tags?.highway || "unknown",
-        sourceUrl: `https://www.openstreetmap.org/way/${element.id}`,
-        verification: "osm_unverified",
-        ...Object.fromEntries(["oneway", "bridge", "tunnel", "layer", "access", "motor_vehicle", "junction"]
-          .filter(tag => typeof tags[tag] === "string" && tags[tag].length <= 120)
-          .map(tag => [tag, tags[tag]])),
-      },
-    });
+    const feature = convertOsmWay(element);
+    if (feature) features.push(feature);
+    else skipped++;
   }
+  if (skipped > 0) console.log("Skipped", skipped, "non-road or invalid OSM elements.");
   if (features.length === 0) throw new Error("No usable road lines were returned. Existing map file left unchanged.");
   const collection: RoadCollection = { type: "FeatureCollection", features };
   if (!validRoadCollection(collection)) throw new Error("Road validation failed. Existing map file left unchanged.");
@@ -73,7 +51,8 @@ async function main() {
   await mkdir(resolve("public/data"), { recursive: true });
   await writeFile(destination, JSON.stringify(collection, null, 2) + "\n", "utf8");
   console.log(`Imported ${features.length} OSM road geometries to public/data/bbr-roads.geojson.`);
-  console.log("UNVERIFIED geography only. No connectivity, flood, safety or route claims.");
+  console.log("Road lines with original OSM node IDs:", features.filter(road => road.properties.osmNodeIds).length);
+  console.log("UNVERIFIED geography only. OSM node identity is not proof of drivable connections, flood safety or routes.");
   console.log("Review road features and licence attribution before committing the generated file.");
 }
 main().catch(error => { console.error(error instanceof Error ? error.message : error); process.exitCode = 1; });
