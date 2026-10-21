@@ -9,6 +9,7 @@ import { bbrReferencePoints } from "@/lib/bbr-reference";
 import { reviewSmallGroups } from "@/lib/bbr-small-groups";
 import { roadReviewFlags } from "@/lib/bbr-road-review-flags";
 import { inspectOsmNodeTopology } from "@/lib/bbr-osm-topology";
+import { CATEGORY_LABELS, DEMO_HAZARDS, HAZARD_CATEGORIES, filterDemoHazards, type HazardCategory } from "@/lib/demo-hazards";
 
 const GeographicReferenceMap = dynamic(() => import("./GeographicReferenceMap"), {
   ssr: false,
@@ -30,6 +31,11 @@ export default function GeographicReferenceWorkspace() {
   const [groupNumber, setGroupNumber] = useState(0);
   const [selectedRoadId, setSelectedRoadId] = useState<string | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<number | null>(null);
+  const [hazardCategory, setHazardCategory] = useState<HazardCategory | "all">("all");
+  const [showDemoHazards, setShowDemoHazards] = useState(true);
+  const [selectedHazardId, setSelectedHazardId] = useState<string | null>(null);
+  const visibleHazards = showDemoHazards ? filterDemoHazards(hazardCategory) : [];
+  const selectedHazard = DEMO_HAZARDS.find(hazard => hazard.id === selectedHazardId) ?? null;
 
   useEffect(() => {
     let active = true;
@@ -94,10 +100,37 @@ export default function GeographicReferenceWorkspace() {
         </label>
         <p className="text-sm text-slate-600">{visibleRoads.length} lines displayed · {roads.length} imported</p>
       </div>
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-orange-200 bg-orange-50/60 p-3">
+        <div>
+          <p className="text-sm font-bold text-orange-950">Example township hazard pins</p>
+          <p className="text-xs text-orange-900">Fictional examples at illustrative locations — no actual hazard observations.</p>
+        </div>
+        <label className="flex items-center gap-2 text-xs font-semibold text-orange-950">
+          <input type="checkbox" checked={showDemoHazards} onChange={event => { setShowDemoHazards(event.target.checked); setSelectedHazardId(null); }} /> Show examples
+        </label>
+        <label className="text-xs font-semibold text-slate-700">Hazard type
+          <select value={hazardCategory} onChange={event => { setHazardCategory(event.target.value as HazardCategory | "all"); setSelectedHazardId(null); }}
+            className="ml-2 rounded-lg border border-slate-300 bg-white px-3 py-2">
+            <option value="all">All hazard types</option>
+            {HAZARD_CATEGORIES.map(category => <option value={category} key={category}>{CATEGORY_LABELS[category]}</option>)}
+          </select>
+        </label>
+        <span className="text-xs font-medium text-slate-600">{visibleHazards.length} fictional marker(s)</span>
+      </div>
       <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
-        <GeographicReferenceMap roads={visibleRoads} selectedRoadId={selectedRoadId} onSelectRoad={setSelectedRoadId} focusGroup={groupNumber} selectedNodePosition={selectedNodePosition} />
+        <GeographicReferenceMap roads={visibleRoads} selectedRoadId={selectedRoadId} onSelectRoad={id => { setSelectedRoadId(id); setSelectedHazardId(null); }} focusGroup={groupNumber} selectedNodePosition={selectedNodePosition} hazards={visibleHazards} onSelectHazard={id => { setSelectedHazardId(id); setSelectedRoadId(null); }} selectedHazardId={selectedHazardId} />
         <aside className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 text-sm" aria-live="polite">
           {activeGroup ? <p className="mb-3 rounded-lg bg-amber-50 p-2 text-xs font-medium text-amber-900">Group {activeGroup.groupNumber}: {activeGroup.roadLineCount} mapped lines. Grouping is geometric only, not proof of disconnected roads.</p> : null}
+          {selectedHazard ? (
+            <div className="mb-4 space-y-2 rounded-xl border border-orange-200 bg-white p-3">
+              <span className="rounded-full bg-orange-100 px-2 py-1 text-[10px] font-bold uppercase text-orange-950">Fictional / unverified</span>
+              <h3 className="text-base font-bold">{selectedHazard.title}</h3>
+              <p className="text-xs font-semibold text-slate-600">{CATEGORY_LABELS[selectedHazard.category]} · {selectedHazard.impact.replaceAll("_"," ")}</p>
+              <p className="text-sm leading-5">{selectedHazard.description}</p>
+              <p className="text-xs text-slate-500">Illustrative map position only, not a real reported incident. No verified road access impact.</p>
+              <button type="button" onClick={() => setSelectedHazardId(null)} className="rounded-lg border border-slate-200 px-3 py-1 text-xs font-semibold">Close example</button>
+            </div>
+          ) : null}
           <h3 className="text-xs font-extrabold uppercase tracking-widest text-slate-500">Road details</h3>
           {selectedRoad ? (
             <div className="mt-3 space-y-2">
