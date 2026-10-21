@@ -14,7 +14,8 @@
     "db:studio": "prisma studio",
     "geo:import": "tsx scripts/import-bbr-roads.ts",
     "geo:audit": "tsx scripts/audit-bbr-roads.ts",
-    "geo:vertices": "tsx scripts/audit-bbr-vertices.ts"
+    "geo:vertices": "tsx scripts/audit-bbr-vertices.ts",
+    "geo:review": "tsx scripts/review-bbr-geometry.ts"
   },
   "dependencies": {
     "next": "^15.5.0",
