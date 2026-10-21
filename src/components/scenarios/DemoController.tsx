@@ -53,16 +53,16 @@ export default function DemoController({ operatorKey = "", readOnly = false }: {
   }
 
   return (
-    <section className="mt-8 rounded-2xl border border-teal-200 bg-white p-4 shadow-sm sm:p-6" aria-label="Demo simulation controller">
+    <section className="mt-8 rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm sm:p-6" aria-label="Demo simulation controller">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs font-bold uppercase tracking-widest text-teal-800">SIMULATION — NOT LIVE CONDITIONS</p>
           <h2 className="mt-1 text-xl font-semibold text-navy">Five-stage 4R scenario controller</h2>
           <p className="mt-2 text-sm text-slate-600">Scripted, fictional inputs; both interfaces read the same SQLite records.</p>
         </div>
-        <button type="button" disabled={busy || !scenario || !operatorKey || readOnly} onClick={() => void change("reset")} className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold disabled:opacity-50"><RotateCcw size={15} /> Reset demo</button>
+        {!readOnly ? <button type="button" disabled={busy || !scenario || !operatorKey} onClick={() => void change("reset")} className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold transition hover:bg-slate-50 disabled:opacity-50"><RotateCcw size={15} /> Reset demo</button> : null}
       </div>
-      {readOnly ? <p className="mt-2 text-sm text-slate-600">Resident view is read-only. Scenario changes are controlled in the local management demo.</p> : null}
+      {readOnly ? <p className="mt-2 text-sm text-slate-600">Current fictional scenario. Stages are controlled from the management demonstration.</p> : null}
       {!readOnly && !operatorKey ? <p className="mt-2 text-sm text-amber-800">Enter your local operator key above to control the demo.</p> : null}
       {error ? <p className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-900" role="alert">{error}</p> : null}
       {scenario ? (
@@ -81,11 +81,11 @@ export default function DemoController({ operatorKey = "", readOnly = false }: {
             <div className="rounded-lg bg-slate-50 p-3"><p className="text-xs text-slate-500">Zone risk (simulated)</p><p className="text-lg font-semibold capitalize">{scenario.overallRisk}</p></div>
           </div>
           <p className="mt-3 text-xs text-slate-600">Risk explanation: {scenario.riskExplanation}. No actual measurements or forecast accuracy claims.</p>
-          <div className="mt-4 flex justify-end">
-            <button type="button" disabled={busy || scenario.stage >= 5 || !operatorKey || readOnly} onClick={() => void change(scenario.stage + 1)} className="inline-flex items-center gap-2 rounded-lg bg-teal-700 px-4 py-2 font-semibold text-white disabled:bg-slate-300">
+          {!readOnly ? <div className="mt-4 flex justify-end">
+            <button type="button" disabled={busy || scenario.stage >= 5 || !operatorKey} onClick={() => void change(scenario.stage + 1)} className="inline-flex items-center gap-2 rounded-xl bg-teal-800 px-4 py-2 font-semibold text-white transition hover:bg-teal-700 disabled:bg-slate-300">
               {busy ? "Updating…" : scenario.stage >= 5 ? "Scenario complete" : "Next stage"} <ChevronRight size={17}/>
             </button>
-          </div>
+          </div> : null}
         </>
       ) : !error ? <p className="mt-4 text-sm" role="status">Loading current demo scenario…</p> : null}
     </section>

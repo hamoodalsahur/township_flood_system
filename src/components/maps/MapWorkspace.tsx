@@ -71,7 +71,7 @@ export default function MapWorkspace({ variant }: { variant: "resident" | "manag
   const gatewayCount = data?.roads.roads.filter(road => road.corridorType === "ingress_egress_gateway").length ?? 0;
 
   return (
-    <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6" aria-label="Interactive schematic road network">
+    <section className="mt-6 rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm sm:p-6" aria-label="Interactive schematic road network">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-teal-700">Simulation · schematic XY · not GPS</p>
@@ -81,7 +81,7 @@ export default function MapWorkspace({ variant }: { variant: "resident" | "manag
           <RefreshCw size={15} aria-hidden="true" /> Refresh data
         </button>
       </div>
-      <p className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm font-medium text-amber-950" role="note">
+      <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50/70 px-4 py-2.5 text-xs font-medium leading-5 text-amber-950" role="note">
         <AlertTriangle size={16} className="mr-2 inline-block" aria-hidden="true" />
         SCHEMATIC DEMONSTRATION — NOT LIVE CONDITIONS. No real BBR road coordinates, closures, warnings or navigation instructions.
       </p>
@@ -127,10 +127,9 @@ export default function MapWorkspace({ variant }: { variant: "resident" | "manag
               <p className="mt-2 text-xs text-slate-600">{data.zones.zones.length} schematic zones · {data.roads.roads.length} links · {gatewayCount} gateways</p>
             </aside>
           </div>
-          <div className="mt-4 text-sm text-slate-600">
-            <strong>Accessibility:</strong> Select a feature on the map, or use the keyboard-accessible lists below. No routes or safe travel recommendations are provided.
-          </div>
-          <div className="mt-3 grid gap-4 md:grid-cols-2">
+          <details className="mt-4 rounded-xl border border-slate-200 bg-slate-50/70">
+          <summary className="cursor-pointer p-3 text-sm font-semibold text-slate-700">Browse zones and road links by name <span className="font-normal text-slate-500">(keyboard-friendly list)</span></summary>
+          <div className="grid gap-4 border-t border-slate-200 p-3 md:grid-cols-2">
             <div>
               <h3 className="mb-2 font-semibold">Zones</h3>
               <div className="max-h-52 space-y-1 overflow-y-auto">
@@ -148,6 +147,7 @@ export default function MapWorkspace({ variant }: { variant: "resident" | "manag
               </div>
             </div>
           </div>
+          </details>
         </>
       ) : null}
     </section>
