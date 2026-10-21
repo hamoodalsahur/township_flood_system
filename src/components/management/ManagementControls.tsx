@@ -9,6 +9,7 @@ import MapWorkspace from "@/components/maps/MapWorkspace";
 import GeographicReferenceWorkspace from "@/components/maps/GeographicReferenceWorkspace";
 import ConnectivityPanel from "@/components/network/ConnectivityPanel";
 import V2HazardManager from "@/components/management/V2HazardManager";
+import AiEvaluationWorkbench from "@/components/management/AiEvaluationWorkbench";
 
 export default function ManagementControls() {
   const [password, setPassword] = useState("");
@@ -80,6 +81,7 @@ export default function ManagementControls() {
       </section>
       <section className="pt-8" id="review-queue">
         <div className="border-b border-slate-200 pb-4"><p className="text-xs font-bold uppercase tracking-widest text-teal-700">Operator workflow · demonstration records</p><h2 className="mt-2 text-2xl font-bold tracking-tight">Reports and review history</h2></div>
+        <AiEvaluationWorkbench operatorKey={operatorKey} />
         <V2HazardManager operatorKey={operatorKey} />
         <ReportWorkspace view="management" operatorKey={operatorKey} />
         <AuditPanel operatorKey={operatorKey} />
