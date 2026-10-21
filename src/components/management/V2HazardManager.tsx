@@ -7,6 +7,17 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
   const [notes,setNotes]=useState<Record<string,string>>({});
   const [message,setMessage]=useState("");
   const [busy,setBusy]=useState(false);
+  const [evidenceUrls,setEvidenceUrls]=useState<Record<string,string>>({});
+  async function viewEvidence(id:string) {
+    setMessage("");
+    try {
+      const response=await fetch("/api/v2/hazards/"+id+"/evidence/private",{headers:{"x-demo-operator-key":operatorKey},cache:"no-store"});
+      if(!response.ok)throw Error(response.status===404?"No private photo is attached to this report.":"Could not retrieve private photo.");
+      const blob=await response.blob();
+      const url=URL.createObjectURL(blob);
+      setEvidenceUrls(old=>{if(old[id])URL.revokeObjectURL(old[id]);return {...old,[id]:url};});
+    }catch(error){setMessage(error instanceof Error?error.message:"Could not open evidence");}
+  }
   async function reload() {
     try {
       const r=await fetch("/api/v2/hazards",{cache:"no-store"});
@@ -44,6 +55,14 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
         <div className="flex flex-wrap items-center justify-between gap-2"><strong>{CATEGORY_LABELS[item.category as HazardCategory]??item.category}</strong><span className="text-xs font-bold uppercase text-orange-700">{item.reviewState} · DEMO</span></div>
         <p className="mt-1 text-sm text-slate-700">{item.description}</p>
         <p className="mt-1 text-xs text-slate-500">Submitted impact: {item.impact.replaceAll("_"," ")} · {new Date(item.createdAt).toLocaleString()}</p>
+        <div className="mt-3">
+          <button type="button" onClick={()=>void viewEvidence(item.id)} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700">View attached private photo (if any)</button>
+          {evidenceUrls[item.id] ? <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
+            <img src={evidenceUrls[item.id]} alt={"Private demonstration evidence for "+item.category} className="max-h-64 max-w-full rounded object-contain" />
+            <p className="mt-2 text-xs text-amber-950">Local operator inspection only. This image is not public, verified, or evidence of real road safety.</p>
+            <button type="button" className="mt-2 text-xs font-semibold underline" onClick={()=>{URL.revokeObjectURL(evidenceUrls[item.id]);setEvidenceUrls(old=>{const next={...old};delete next[item.id];return next;});}}>Hide photo</button>
+          </div> : null}
+        </div>
         {item.reviewState==="unverified"?<div className="mt-3 space-y-2">
           <label className="block text-xs font-semibold">Review reason
             <input value={notes[item.id]??""} onChange={e=>setNotes(old=>({...old,[item.id]:e.target.value}))} maxLength={400} className="mt-1 block w-full rounded-lg border border-slate-300 p-2" placeholder="At least 8 characters" />
