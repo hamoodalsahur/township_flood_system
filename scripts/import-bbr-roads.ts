@@ -4,10 +4,11 @@
  *
  * npm run geo:import
  */
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, writeFile, readFile, copyFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { validRoadCollection, type RoadCollection, type RoadFeature } from "../src/lib/bbr-roads";
 import { convertOsmWay, RESEARCH_BOUNDS, type OsmWay } from "../src/lib/bbr-osm-import";
+import { compareRoadImports } from "../src/lib/bbr-road-import-diff";
 
 type OverpassResponse = { elements?: OsmWay[] };
 
@@ -48,11 +49,45 @@ async function main() {
   if (!validRoadCollection(collection)) throw new Error("Road validation failed. Existing map file left unchanged.");
 
   const destination = resolve("public/data/bbr-roads.geojson");
+  const previousText = await readFile(destination, "utf8").catch((error: unknown) => {
+    if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") return null;
+    throw error;
+  });
+  let previous: RoadCollection | null = null;
+  if (previousText !== null) {
+    let parsed: unknown;
+    try { parsed = JSON.parse(previousText); }
+    catch { throw new Error("Existing road file has invalid JSON. Import stopped; preserve it before proceeding."); }
+    if (!validRoadCollection(parsed)) throw new Error("Existing road file did not pass validation. Import stopped to protect it.");
+    previous = parsed;
+  }
+  let localBackup: string | null = null;
+  if (previousText !== null) {
+    await mkdir(resolve("reports/backups"), { recursive: true });
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    localBackup = "reports/backups/bbr-roads-" + timestamp + ".geojson";
+    await copyFile(destination, resolve(localBackup));
+    console.log("Preserved previous road snapshot in:", localBackup);
+  }
   await mkdir(resolve("public/data"), { recursive: true });
   await writeFile(destination, JSON.stringify(collection, null, 2) + "\n", "utf8");
-  console.log(`Imported ${features.length} OSM road geometries to public/data/bbr-roads.geojson.`);
-  console.log("Road lines with original OSM node IDs:", features.filter(road => road.properties.osmNodeIds).length);
+  const comparison = compareRoadImports(previous, collection);
+  const manifest = {
+    importedAt: new Date().toISOString(),
+    source: "OpenStreetMap / Overpass (unverified)",
+    researchBounds: bounds,
+    overpassEndpoint: endpoint,
+    sourceQuery: query,
+    localBackup,
+    ...comparison,
+  };
+  await mkdir(resolve("reports"), { recursive: true });
+  await writeFile(resolve("reports/bbr-osm-import.json"), JSON.stringify(manifest, null, 2) + "\n", "utf8");
+  console.log("Imported", features.length, "OSM road geometries to public/data/bbr-roads.geojson.");
+  console.log("Road lines with original OSM node IDs:", comparison.linesWithOsmNodes);
+  console.log("Way IDs added:", comparison.addedWayIds, "removed:", comparison.removedWayIds);
+  console.log("Snapshot summary: reports/bbr-osm-import.json");
   console.log("UNVERIFIED geography only. OSM node identity is not proof of drivable connections, flood safety or routes.");
-  console.log("Review road features and licence attribution before committing the generated file.");
+  console.log("Keep a separate backup outside the repo before changing Git branches.");
 }
 main().catch(error => { console.error(error instanceof Error ? error.message : error); process.exitCode = 1; });
