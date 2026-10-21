@@ -10,7 +10,7 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
   const [message,setMessage]=useState("");
   const [busy,setBusy]=useState(false);
   const [evidenceUrls,setEvidenceUrls]=useState<Record<string,string>>({});
-  const [aiResults,setAiResults]=useState<Record<string,{model:string;analysed:number;matches:{id:string;similarity:number;category:string}[];disclaimer:string}>>({});
+  const [aiResults,setAiResults]=useState<Record<string,{provider:string;model:string;analysed:number;matches:{id:string;similarity:number;category:string}[];disclaimer:string}>>({});
   const [aiErrors,setAiErrors]=useState<Record<string,string>>({});
   const [aiBusy,setAiBusy]=useState<string|null>(null);
   async function runAiAnalysis(id:string) {
@@ -77,7 +77,7 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
           </div>
           {aiErrors[item.id]?<p role="status" className="mt-2 text-rose-800">{aiErrors[item.id]}</p>:null}
           {aiResults[item.id]?<div className="mt-3 space-y-1">
-            <p className="font-semibold">Model: {aiResults[item.id].model} · compared {aiResults[item.id].analysed} reports</p>
+            <p className="font-semibold">Provider: {aiResults[item.id].provider} · Model: {aiResults[item.id].model} · compared {aiResults[item.id].analysed} reports</p>
             {aiResults[item.id].matches.length?aiResults[item.id].matches.map(match=><p key={match.id}>Possible match: {match.id} · similarity {(match.similarity*100).toFixed(1)}% · {match.category.replaceAll("_"," ")}</p>):<p>No strong semantic matches found.</p>}
             <p className="mt-2 text-violet-800">{aiResults[item.id].disclaimer}</p>
           </div>:null}
