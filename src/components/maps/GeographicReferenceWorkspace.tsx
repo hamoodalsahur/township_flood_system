@@ -10,6 +10,7 @@ import { reviewSmallGroups } from "@/lib/bbr-small-groups";
 import { roadReviewFlags } from "@/lib/bbr-road-review-flags";
 import { inspectOsmNodeTopology } from "@/lib/bbr-osm-topology";
 import { CATEGORY_LABELS, DEMO_HAZARDS, HAZARD_CATEGORIES, filterDemoHazards, type HazardCategory } from "@/lib/demo-hazards";
+import { HAZARD_SYMBOLS } from "@/lib/hazard-symbols";
 
 const GeographicReferenceMap = dynamic(() => import("./GeographicReferenceMap"), {
   ssr: false,
@@ -163,6 +164,16 @@ export default function GeographicReferenceWorkspace() {
         </label>
         <span className="text-xs font-medium text-slate-600">{visibleHazards.length} fictional marker(s)</span>
       </div>
+      <div className="mt-2 flex flex-wrap gap-2" aria-label="Hazard marker legend">
+        {HAZARD_CATEGORIES.map(category => (
+          <button type="button" key={category} onClick={() => { setHazardCategory(category); setShowDemoHazards(true); setSelectedHazardId(null); }}
+            aria-pressed={hazardCategory === category}
+            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${hazardCategory === category ? "border-teal-600 bg-teal-50 text-teal-900" : "border-slate-200 bg-white text-slate-700 hover:border-teal-300"}`}>
+            <span aria-hidden="true">{HAZARD_SYMBOLS[category].symbol}</span>{CATEGORY_LABELS[category]}
+          </button>
+        ))}
+        {hazardCategory !== "all" ? <button type="button" onClick={() => setHazardCategory("all")} className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold">Show all</button> : null}
+      </div>
       <details className="mt-3 rounded-xl border border-teal-200 bg-teal-50/50" id="report-demo-hazard">
         <summary className="cursor-pointer px-4 py-3 text-sm font-bold text-teal-900">Report an example hazard · Click a position on the map</summary>
         <div className="grid gap-3 border-t border-teal-100 p-4 sm:grid-cols-2">
@@ -195,7 +206,7 @@ export default function GeographicReferenceWorkspace() {
           {selectedHazard ? (
             <div className="mb-4 space-y-2 rounded-xl border border-orange-200 bg-white p-3">
               <span className="rounded-full bg-orange-100 px-2 py-1 text-[10px] font-bold uppercase text-orange-950">Fictional / unverified</span>
-              <h3 className="text-base font-bold">{selectedHazard.title}</h3>
+              <h3 className="text-base font-bold"><span className="mr-2" aria-hidden="true">{HAZARD_SYMBOLS[selectedHazard.category].symbol}</span>{selectedHazard.title}</h3>
               <p className="text-xs font-semibold text-slate-600">{CATEGORY_LABELS[selectedHazard.category]} · {selectedHazard.impact.replaceAll("_"," ")}</p>
               <p className="text-sm leading-5">{selectedHazard.description}</p>
               <p className="text-xs text-slate-500">Illustrative map position only, not a real reported incident. No verified road access impact.</p>
