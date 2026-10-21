@@ -1,4 +1,4 @@
-export const REPORT_CATEGORIES = ["surface_water", "blocked_drain", "road_obstruction"] as const;
+export const REPORT_CATEGORIES = ["surface_water", "blocked_drain", "road_obstruction", "roadworks", "fallen_tree", "pothole", "storm_damage", "other"] as const;
 export const REVIEW_DECISIONS = ["corroborated", "rejected"] as const;
 
 export function parseSubmission(value: unknown) {
