@@ -1,9 +1,20 @@
 "use client";
 
-import { MapContainer, TileLayer, CircleMarker, Tooltip, ZoomControl, Polyline } from "react-leaflet";
+import { MapContainer, TileLayer, CircleMarker, Tooltip, ZoomControl, Polyline, useMap } from "react-leaflet";
+import { useEffect } from "react";
 import { bbrReferencePoints, isValidLonLat } from "@/lib/bbr-reference";
 import { roadStyle } from "@/lib/bbr-road-display";
 import type { RoadFeature } from "@/lib/bbr-roads";
+
+function FocusSelectedGroup({ roads, focusGroup }: { roads: RoadFeature[]; focusGroup: number }) {
+  const map = useMap();
+  useEffect(() => {
+    if (focusGroup === 0 || roads.length === 0) return;
+    const points = roads.flatMap(road => road.geometry.coordinates.map(([lon, lat]) => [lat, lon] as [number, number]));
+    if (points.length > 0) map.fitBounds(points, { padding: [24, 24], maxZoom: 16 });
+  }, [map, roads, focusGroup]);
+  return null;
+}
 
 const features = bbrReferencePoints.features.filter(feature => isValidLonLat(feature.geometry.coordinates));
 
@@ -11,10 +22,12 @@ export default function GeographicReferenceMap({
   roads = [],
   selectedRoadId,
   onSelectRoad,
+  focusGroup = 0,
 }: {
   roads?: RoadFeature[];
   selectedRoadId: string | null;
   onSelectRoad: (id: string) => void;
+  focusGroup?: number;
 }) {
   return (
     <div className="overflow-hidden rounded-xl border border-slate-200">
@@ -30,6 +43,7 @@ export default function GeographicReferenceMap({
           maxZoom={19}
         />
         <ZoomControl position="topright" />
+        <FocusSelectedGroup roads={roads} focusGroup={focusGroup} />
         {roads.map(road => {
           const selected = selectedRoadId === road.properties.id;
           return (
