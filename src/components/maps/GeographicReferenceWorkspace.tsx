@@ -92,6 +92,18 @@ export default function GeographicReferenceWorkspace() {
               <p className="break-words font-semibold">{selectedRoad.properties.name}</p>
               <p>OSM type: <span className="font-medium">{selectedRoad.properties.highway.replaceAll("_", " ")}</span></p>
               <p>Category: {roadCategory(selectedRoad.properties.highway)}</p>
+              <div className="rounded-lg border border-slate-200 bg-white p-3">
+                <h4 className="font-semibold">Mapped road attributes</h4>
+                <dl className="mt-2 space-y-1 text-xs">
+                  {(["oneway", "access", "bridge", "tunnel", "layer", "motor_vehicle", "junction"] as const).map(tag => (
+                    <div key={tag} className="flex justify-between gap-3">
+                      <dt className="text-slate-600">{tag.replaceAll("_", " ")}</dt>
+                      <dd className="break-words text-right font-medium">{selectedRoad.properties[tag] ?? "Not recorded"}</dd>
+                    </div>
+                  ))}
+                </dl>
+                <p className="mt-3 text-xs text-amber-900">OSM values are unverified. Missing tags do not mean unrestricted access or safe conditions.</p>
+              </div>
               <p className="text-slate-600">Verification: mapped by OSM contributors; not independently checked.</p>
               <a href={selectedRoad.properties.sourceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 break-all font-semibold text-teal-700 underline">Inspect OSM way <ExternalLink size={14}/></a>
               <button type="button" className="block rounded-lg border px-3 py-1 text-xs" onClick={() => setSelectedRoadId(null)}>Clear selection</button>
