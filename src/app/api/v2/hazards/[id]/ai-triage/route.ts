@@ -5,7 +5,7 @@ import { analyseWithEmbeddings } from "@/lib/v2-ai-triage";
 export const dynamic="force-dynamic";
 export async function POST(request:Request,context:{params:Promise<{id:string}>}) {
  if(!canUseDemoOperatorApi(request))return NextResponse.json({error:"Development operator access required"},{status:403});
- if(!process.env.OPENAI_API_KEY)return NextResponse.json({error:"AI not configured. Set OPENAI_API_KEY in your local .env; rule-based triage remains available."},{status:503});
+
  try {
   const {id}=await context.params;
   const reports=await prisma.hazardReport.findMany({where:{sourceMode:"simulation"},orderBy:{createdAt:"desc"},take:100,
