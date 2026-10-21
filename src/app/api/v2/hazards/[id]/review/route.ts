@@ -14,7 +14,9 @@ export async function PATCH(request:Request,context:{params:Promise<{id:string}>
       if(!existing || existing.sourceMode!=="simulation") return null;
       if(existing.reviewState!=="unverified") return "already-reviewed" as const;
       const row=await tx.hazardReport.update({where:{id},data:{reviewState:decision.decision,reviewNote:decision.note,reviewedAt:new Date()}});
-      await tx.auditEntry.create({data:{action:"v2_demo_hazard_review",subjectId:id,actor:"LOCAL_DEMO_OPERATOR",detail:`Decision: ${decision.decision}. ${decision.note}`,sourceMode:"simulation"}});
+      const evidence=await tx.hazardEvidence.findUnique({where:{reportId:id},select:{id:true}});
+      if(evidence) await tx.hazardEvidence.update({where:{id:evidence.id},data:{status:decision.decision==="corroborated" && decision.publishPhoto ? "approved_public_demo" : "private_rejected"}});
+      await tx.auditEntry.create({data:{action:"v2_demo_hazard_review",subjectId:id,actor:"LOCAL_DEMO_OPERATOR",detail:`Decision: ${decision.decision}; public demo photo approved: ${Boolean(evidence && decision.decision==="corroborated" && decision.publishPhoto)}. ${decision.note}`,sourceMode:"simulation"}});
       return row;
     });
     if(result===null) return NextResponse.json({error:"Report not found."},{status:404});

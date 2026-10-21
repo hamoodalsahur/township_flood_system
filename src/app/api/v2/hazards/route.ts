@@ -6,8 +6,8 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     const records = await prisma.hazardReport.findMany({ orderBy:{createdAt:"desc"}, take:100,
-      select:{id:true,category:true,description:true,longitude:true,latitude:true,impact:true,reviewState:true,createdAt:true,sourceMode:true} });
-    return NextResponse.json({mode:"simulation", reports:records.filter(x=>x.sourceMode==="simulation"&&x.reviewState!=="rejected"), disclaimer:"FICTIONAL geographic report examples. Not verified road conditions or real travel advice."});
+      select:{id:true,category:true,description:true,longitude:true,latitude:true,impact:true,reviewState:true,createdAt:true,sourceMode:true,evidence:{select:{status:true}}} });
+    return NextResponse.json({mode:"simulation", reports:records.filter(x=>x.sourceMode==="simulation"&&x.reviewState!=="rejected").map(({evidence,...report})=>({...report,hasApprovedPhoto:report.reviewState==="corroborated"&&evidence?.status==="approved_public_demo"})), disclaimer:"FICTIONAL geographic report examples. Not verified road conditions or real travel advice."});
   } catch {
     return NextResponse.json({error:"Demo hazard database unavailable. Run npm run db:push."},{status:500});
   }

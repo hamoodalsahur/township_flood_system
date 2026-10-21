@@ -21,5 +21,6 @@ export function validateHazardReview(input: unknown) {
   const data = input as Record<string,unknown>;
   if (data.decision !== "corroborated" && data.decision !== "rejected") throw new Error("Choose corroborated or rejected");
   if (typeof data.note !== "string" || data.note.trim().length < 8 || data.note.length > 400) throw new Error("Review note must be 8–400 characters");
-  return { decision:data.decision as "corroborated"|"rejected", note:data.note.trim() };
+  if (data.publishPhoto !== undefined && typeof data.publishPhoto !== "boolean") throw new Error("Invalid photo visibility choice");
+  return { decision:data.decision as "corroborated"|"rejected", note:data.note.trim(), publishPhoto:data.publishPhoto === true };
 }
