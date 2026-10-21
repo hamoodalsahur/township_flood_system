@@ -12,6 +12,6 @@ test("rejects malformed, missing and out of study-window positions",()=>{
  assert.throws(()=>validateHazardSubmission({...valid,coordinates:[101.435,3.087],impact:"confirmed_closed"}));
 });
 test("requires a reason for operator demo review",()=>{
- assert.deepEqual(validateHazardReview({decision:"corroborated",note:"Checked fictional example."}),{decision:"corroborated",note:"Checked fictional example."});
+ assert.deepEqual(validateHazardReview({decision:"corroborated",note:"Checked fictional example."}),{decision:"corroborated",note:"Checked fictional example.",publishPhoto:false});
  assert.throws(()=>validateHazardReview({decision:"rejected",note:"no"}));
 });
