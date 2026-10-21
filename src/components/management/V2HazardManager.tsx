@@ -17,7 +17,7 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
     setAiBusy(id);setAiErrors(old=>({...old,[id]:""}));
     try {
       const response=await fetch("/api/v2/hazards/"+id+"/ai-triage",{method:"POST",headers:{"x-demo-operator-key":operatorKey}});
-      const result=await response.json() as {error?:string;model:string;analysed:number;matches:{id:string;similarity:number;category:string}[];disclaimer:string};
+      const result=await response.json() as {error?:string;provider:string;model:string;analysed:number;matches:{id:string;similarity:number;category:string}[];disclaimer:string};
       if(!response.ok)throw Error(result.error??"AI comparison failed");
       setAiResults(old=>({...old,[id]:result}));
     }catch(error){setAiErrors(old=>({...old,[id]:error instanceof Error?error.message:"AI unavailable"}));}
