@@ -51,6 +51,7 @@ export default function ReportWorkspace({ view, operatorKey = "" }: { view: "res
 
   return <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
     <p className="text-xs font-bold uppercase tracking-wider text-teal-800">Simulation only · no real reports</p>
+    <p className="mt-2 text-xs text-slate-600">New hazard categories apply to fictional road reports only. Public geographic hazard markers are separate example data, not submitted reports yet.</p>
     <h2 className="mt-1 text-xl font-bold">{view==="resident"?"Submit a demonstration report":"Review demonstration reports"}</h2>
     {view==="resident"?<div className="mt-4 space-y-3">
       <label className="block text-sm font-semibold">Fictional road
@@ -58,7 +59,8 @@ export default function ReportWorkspace({ view, operatorKey = "" }: { view: "res
       </label>
       <label className="block text-sm font-semibold">Issue
         <select value={category} onChange={e=>setCategory(e.target.value)} className="mt-1 block w-full rounded-lg border p-2">
-          <option value="surface_water">Surface water</option><option value="blocked_drain">Blocked drain</option><option value="road_obstruction">Road obstruction</option>
+          <option value="surface_water">Flooding / surface water</option><option value="blocked_drain">Blocked drain</option><option value="road_obstruction">Blocked road / debris</option>
+          <option value="fallen_tree">Fallen tree</option><option value="roadworks">Road construction</option><option value="pothole">Pothole / road damage</option><option value="storm_damage">Storm damage</option><option value="other">Other road hazard</option>
         </select>
       </label>
       <label className="block text-sm font-semibold">What did you observe? (fictional test description)

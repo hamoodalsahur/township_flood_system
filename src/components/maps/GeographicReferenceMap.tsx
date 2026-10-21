@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { bbrReferencePoints, isValidLonLat } from "@/lib/bbr-reference";
 import { roadStyle } from "@/lib/bbr-road-display";
 import type { RoadFeature } from "@/lib/bbr-roads";
+import type { DemoHazard } from "@/lib/demo-hazards";
 
 function FocusSelectedNode({ selectedNodePosition }: { selectedNodePosition: [number, number] | null }) {
   const map = useMap();
@@ -34,12 +35,18 @@ export default function GeographicReferenceMap({
   onSelectRoad,
   focusGroup = 0,
   selectedNodePosition = null,
+  hazards = [],
+  onSelectHazard = () => {},
+  selectedHazardId = null,
 }: {
   roads?: RoadFeature[];
   selectedRoadId: string | null;
   onSelectRoad: (id: string) => void;
   focusGroup?: number;
   selectedNodePosition?: [number, number] | null;
+  hazards?: DemoHazard[];
+  onSelectHazard?: (id: string) => void;
+  selectedHazardId?: string | null;
 }) {
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 shadow-inner">
@@ -73,6 +80,14 @@ export default function GeographicReferenceMap({
             </Polyline>
           );
         })}
+        {hazards.map(hazard => (
+          <CircleMarker key={hazard.id} center={[hazard.coordinates[1], hazard.coordinates[0]]}
+            radius={selectedHazardId === hazard.id ? 12 : 9}
+            eventHandlers={{ click: () => onSelectHazard(hazard.id) }}
+            pathOptions={{ color: "#ffffff", weight: 3, fillColor: "#dc6c19", fillOpacity: 0.95 }}>
+            <Tooltip sticky>DEMO hazard · {hazard.title} · click for details</Tooltip>
+          </CircleMarker>
+        ))}
         {features.map(feature => {
           const [longitude, latitude] = feature.geometry.coordinates;
           return (
