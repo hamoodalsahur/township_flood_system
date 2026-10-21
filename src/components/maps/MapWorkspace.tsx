@@ -64,6 +64,12 @@ export default function MapWorkspace({ variant }: { variant: "resident" | "manag
     void reload(controller.signal);
     return () => controller.abort();
   }, [reload]);
+  // Keep the resident demo in sync when operator controls live in another tab.
+  useEffect(() => {
+    if (variant !== "resident") return;
+    const interval = window.setInterval(() => { void reload(); }, 9000);
+    return () => window.clearInterval(interval);
+  }, [variant, reload]);
 
   const selection: Selection | null = useMemo(() => {
     if (!data || !selectedId) return null;

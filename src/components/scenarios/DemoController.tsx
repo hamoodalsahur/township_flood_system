@@ -34,6 +34,12 @@ export default function DemoController({ operatorKey = "", readOnly = false }: {
     window.addEventListener(changeEvent, handler);
     return () => window.removeEventListener(changeEvent, handler);
   }, [load]);
+  // A resident tab can be open alongside the management demo.
+  useEffect(() => {
+    if (!readOnly) return;
+    const interval = window.setInterval(() => { void load(); }, 9000);
+    return () => window.clearInterval(interval);
+  }, [load, readOnly]);
 
   async function change(next: number | "reset") {
     setBusy(true);
