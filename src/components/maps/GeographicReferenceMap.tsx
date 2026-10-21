@@ -42,11 +42,11 @@ export default function GeographicReferenceMap({
   selectedNodePosition?: [number, number] | null;
 }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200">
+    <div className="overflow-hidden rounded-2xl border border-slate-200 shadow-inner">
       <MapContainer
         center={[3.087, 101.435]} zoom={14} minZoom={9} maxZoom={18}
         scrollWheelZoom={false} zoomControl={false}
-        className="h-[340px] w-full bg-slate-100 sm:h-[420px]"
+        className="h-[390px] w-full bg-slate-100 sm:h-[520px] lg:h-[570px]"
         aria-label="Geographic context near Bandar Bukit Raja; not a flood or road safety map"
       >
         <TileLayer
