@@ -137,3 +137,22 @@ model AuditEntry {
   @@index([createdAt])
   @@map("audit_entries")
 }
+
+/** Separate V2 geographic demonstration reports. Never authoritative road status. */
+model HazardReport {
+  id          String   @id @default(cuid())
+  category    String
+  description String
+  longitude   Float
+  latitude    Float
+  impact      String
+  reviewState String   @default("unverified")
+  reviewNote  String?
+  reviewedAt  DateTime?
+  sourceMode  String   @default("simulation")
+  createdAt   DateTime @default(now())
+
+  @@index([reviewState, createdAt])
+  @@index([category, createdAt])
+  @@map("hazard_reports")
+}
