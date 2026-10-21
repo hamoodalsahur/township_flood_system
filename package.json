@@ -20,7 +20,8 @@
     "geo:tags": "tsx scripts/audit-bbr-tags.ts",
     "geo:tag-values": "tsx scripts/inspect-bbr-tags.ts",
     "geo:junctions": "tsx scripts/review-bbr-junctions.ts",
-    "geo:node-topology": "tsx scripts/audit-bbr-topology.ts"
+    "geo:node-topology": "tsx scripts/audit-bbr-topology.ts",
+    "geo:inspect-all": "tsx scripts/inspect-bbr-research.ts"
   },
   "dependencies": {
     "next": "^15.5.0",
