@@ -7,6 +7,7 @@ import { filterRoads, roadCategory, type RoadFilter } from "@/lib/bbr-road-displ
 import { MapPinned, ExternalLink } from "lucide-react";
 import { bbrReferencePoints } from "@/lib/bbr-reference";
 import { reviewSmallGroups } from "@/lib/bbr-small-groups";
+import { roadReviewFlags } from "@/lib/bbr-road-review-flags";
 
 const GeographicReferenceMap = dynamic(() => import("./GeographicReferenceMap"), {
   ssr: false,
@@ -54,6 +55,7 @@ export default function GeographicReferenceWorkspace() {
     return byCategory.filter(road => ids.has(road.properties.id));
   }, [roads, filter, activeGroup]);
   const selectedRoad = roads.find(road => road.properties.id === selectedRoadId) ?? null;
+  const reviewFlags = selectedRoad ? roadReviewFlags(selectedRoad) : [];
   const counts = useMemo(() => ({
     major: filterRoads(roads, "major").length,
     local: filterRoads(roads, "local").length,
@@ -92,6 +94,15 @@ export default function GeographicReferenceWorkspace() {
               <p className="break-words font-semibold">{selectedRoad.properties.name}</p>
               <p>OSM type: <span className="font-medium">{selectedRoad.properties.highway.replaceAll("_", " ")}</span></p>
               <p>Category: {roadCategory(selectedRoad.properties.highway)}</p>
+              {reviewFlags.length > 0 ? (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+                  <h4 className="font-semibold text-amber-950">Mapped tags to review</h4>
+                  <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-amber-950">
+                    {reviewFlags.map(flag => <li key={flag.code}>{flag.label}</li>)}
+                  </ul>
+                  <p className="mt-2 text-xs text-amber-900">Review flags are based on unverified OSM tags, not actual road availability or flood safety.</p>
+                </div>
+              ) : <p className="text-xs text-slate-600">No review flags from the selected tags. Other restrictions may still exist.</p>}
               <div className="rounded-lg border border-slate-200 bg-white p-3">
                 <h4 className="font-semibold">Mapped road attributes</h4>
                 <dl className="mt-2 space-y-1 text-xs">
