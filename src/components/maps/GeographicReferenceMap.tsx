@@ -1,6 +1,6 @@
 "use client";
 
-import { MapContainer, TileLayer, CircleMarker, Tooltip, ZoomControl, Polyline, useMap } from "react-leaflet";
+import { useMapEvents, MapContainer, TileLayer, CircleMarker, Tooltip, ZoomControl, Polyline, useMap } from "react-leaflet";
 import { useEffect } from "react";
 import { bbrReferencePoints, isValidLonLat } from "@/lib/bbr-reference";
 import { roadStyle } from "@/lib/bbr-road-display";
@@ -27,6 +27,10 @@ function FocusSelectedGroup({ roads, focusGroup }: { roads: RoadFeature[]; focus
   return null;
 }
 
+function LocationPicker({ onChooseLocation }: {onChooseLocation?: (coordinates:[number,number])=>void}) {
+  useMapEvents({ click(event) { onChooseLocation?.([event.latlng.lng,event.latlng.lat]); } });
+  return null;
+}
 const features = bbrReferencePoints.features.filter(feature => isValidLonLat(feature.geometry.coordinates));
 
 export default function GeographicReferenceMap({
@@ -38,6 +42,8 @@ export default function GeographicReferenceMap({
   hazards = [],
   onSelectHazard = () => {},
   selectedHazardId = null,
+  onChooseLocation,
+  selectedLocation = null,
 }: {
   roads?: RoadFeature[];
   selectedRoadId: string | null;
@@ -47,6 +53,8 @@ export default function GeographicReferenceMap({
   hazards?: DemoHazard[];
   onSelectHazard?: (id: string) => void;
   selectedHazardId?: string | null;
+  onChooseLocation?: (coordinates:[number,number])=>void;
+  selectedLocation?: [number,number] | null;
 }) {
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 shadow-inner">
@@ -62,6 +70,8 @@ export default function GeographicReferenceMap({
           maxZoom={19}
         />
         <ZoomControl position="topright" />
+        <LocationPicker onChooseLocation={onChooseLocation} />
+        {selectedLocation ? <CircleMarker center={[selectedLocation[1],selectedLocation[0]]} radius={10} pathOptions={{color:"#0f766e",fillColor:"#5eead4",fillOpacity:1,weight:3}}><Tooltip permanent>Draft demo report location</Tooltip></CircleMarker>:null}
         <FocusSelectedGroup roads={roads} focusGroup={focusGroup} />
         <FocusSelectedNode selectedNodePosition={selectedNodePosition} />
         {selectedNodePosition ? <CircleMarker
