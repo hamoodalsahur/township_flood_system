@@ -6,6 +6,7 @@ import { validRoadCollection, type RoadFeature } from "@/lib/bbr-roads";
 import { filterRoads, roadCategory, type RoadFilter } from "@/lib/bbr-road-display";
 import { MapPinned, ExternalLink } from "lucide-react";
 import { bbrReferencePoints } from "@/lib/bbr-reference";
+import { reviewSmallGroups } from "@/lib/bbr-small-groups";
 
 const GeographicReferenceMap = dynamic(() => import("./GeographicReferenceMap"), {
   ssr: false,
@@ -24,6 +25,7 @@ export default function GeographicReferenceWorkspace() {
   const [roads, setRoads] = useState<RoadFeature[]>([]);
   const [roadMessage, setRoadMessage] = useState("Checking for locally imported roads…");
   const [filter, setFilter] = useState<RoadFilter>("all");
+  const [groupNumber, setGroupNumber] = useState(0);
   const [selectedRoadId, setSelectedRoadId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -43,7 +45,14 @@ export default function GeographicReferenceWorkspace() {
     return () => { active = false; };
   }, []);
 
-  const visibleRoads = useMemo(() => filterRoads(roads, filter), [roads, filter]);
+  const smallGroups = useMemo(() => reviewSmallGroups({ type: "FeatureCollection", features: roads }).smallerGroups, [roads]);
+  const activeGroup = smallGroups.find(group => group.groupNumber === groupNumber);
+  const visibleRoads = useMemo(() => {
+    const byCategory = filterRoads(roads, filter);
+    if (!activeGroup) return byCategory;
+    const ids = new Set(activeGroup.ways.map(road => road.id));
+    return byCategory.filter(road => ids.has(road.properties.id));
+  }, [roads, filter, activeGroup]);
   const selectedRoad = roads.find(road => road.properties.id === selectedRoadId) ?? null;
   const counts = useMemo(() => ({
     major: filterRoads(roads, "major").length,
@@ -64,11 +73,19 @@ export default function GeographicReferenceWorkspace() {
             {categories.map(category => <option key={category.value} value={category.value}>{category.label}</option>)}
           </select>
         </label>
+        <label className="block text-sm font-semibold">
+          Inspect candidate group
+          <select value={groupNumber} onChange={event => { setGroupNumber(Number(event.target.value)); setFilter("all"); setSelectedRoadId(null); }} className="mt-1 block rounded-lg border border-slate-300 bg-white px-3 py-2">
+            <option value={0}>All imported roads</option>
+            {smallGroups.map(group => <option key={group.groupNumber} value={group.groupNumber}>Group {group.groupNumber} ({group.roadLineCount} lines)</option>)}
+          </select>
+        </label>
         <p className="text-sm text-slate-600">{visibleRoads.length} lines displayed · {roads.length} imported</p>
       </div>
       <div className="mt-3 grid gap-4 lg:grid-cols-[minmax(0,1fr)_250px]">
-        <GeographicReferenceMap roads={visibleRoads} selectedRoadId={selectedRoadId} onSelectRoad={setSelectedRoadId} />
+        <GeographicReferenceMap roads={visibleRoads} selectedRoadId={selectedRoadId} onSelectRoad={setSelectedRoadId} focusGroup={groupNumber} />
         <aside className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm" aria-live="polite">
+          {activeGroup ? <p className="mb-3 rounded-lg bg-amber-50 p-2 text-xs font-medium text-amber-900">Group {activeGroup.groupNumber}: {activeGroup.roadLineCount} mapped lines. Grouping is geometric only, not proof of disconnected roads.</p> : null}
           <h3 className="font-semibold">Selected road</h3>
           {selectedRoad ? (
             <div className="mt-3 space-y-2">
