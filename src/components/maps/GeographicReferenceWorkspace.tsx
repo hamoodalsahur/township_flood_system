@@ -8,6 +8,7 @@ import { MapPinned, ExternalLink } from "lucide-react";
 import { bbrReferencePoints } from "@/lib/bbr-reference";
 import { reviewSmallGroups } from "@/lib/bbr-small-groups";
 import { roadReviewFlags } from "@/lib/bbr-road-review-flags";
+import { inspectOsmNodeTopology } from "@/lib/bbr-osm-topology";
 
 const GeographicReferenceMap = dynamic(() => import("./GeographicReferenceMap"), {
   ssr: false,
@@ -28,6 +29,7 @@ export default function GeographicReferenceWorkspace() {
   const [filter, setFilter] = useState<RoadFilter>("all");
   const [groupNumber, setGroupNumber] = useState(0);
   const [selectedRoadId, setSelectedRoadId] = useState<string | null>(null);
+  const [selectedNodeId, setSelectedNodeId] = useState<number | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -47,6 +49,9 @@ export default function GeographicReferenceWorkspace() {
   }, []);
 
   const smallGroups = useMemo(() => reviewSmallGroups({ type: "FeatureCollection", features: roads }).smallerGroups, [roads]);
+  const topology = useMemo(() => inspectOsmNodeTopology({ type: "FeatureCollection", features: roads }), [roads]);
+  const selectedNode = topology.reviewExamples.find(item => item.nodeId === selectedNodeId) ?? null;
+  const selectedNodePosition = selectedNode ? selectedNode.coordinate.split(",").map(Number) as [number, number] : null;
   const activeGroup = smallGroups.find(group => group.groupNumber === groupNumber);
   const visibleRoads = useMemo(() => {
     const byCategory = filterRoads(roads, filter);
@@ -71,13 +76,13 @@ export default function GeographicReferenceWorkspace() {
       <div className="mt-4 flex flex-wrap items-end justify-between gap-3">
         <label className="block text-sm font-semibold">
           Show road category
-          <select value={filter} onChange={event => { setFilter(event.target.value as RoadFilter); setSelectedRoadId(null); }} className="mt-1 block rounded-lg border border-slate-300 bg-white px-3 py-2">
+          <select value={filter} onChange={event => { setFilter(event.target.value as RoadFilter); setSelectedRoadId(null); setSelectedNodeId(null); }} className="mt-1 block rounded-lg border border-slate-300 bg-white px-3 py-2">
             {categories.map(category => <option key={category.value} value={category.value}>{category.label}</option>)}
           </select>
         </label>
         <label className="block text-sm font-semibold">
           Inspect candidate group
-          <select value={groupNumber} onChange={event => { setGroupNumber(Number(event.target.value)); setFilter("all"); setSelectedRoadId(null); }} className="mt-1 block rounded-lg border border-slate-300 bg-white px-3 py-2">
+          <select value={groupNumber} onChange={event => { setGroupNumber(Number(event.target.value)); setFilter("all"); setSelectedRoadId(null); setSelectedNodeId(null); }} className="mt-1 block rounded-lg border border-slate-300 bg-white px-3 py-2">
             <option value={0}>All imported roads</option>
             {smallGroups.map(group => <option key={group.groupNumber} value={group.groupNumber}>Group {group.groupNumber} ({group.roadLineCount} lines)</option>)}
           </select>
@@ -85,7 +90,7 @@ export default function GeographicReferenceWorkspace() {
         <p className="text-sm text-slate-600">{visibleRoads.length} lines displayed · {roads.length} imported</p>
       </div>
       <div className="mt-3 grid gap-4 lg:grid-cols-[minmax(0,1fr)_250px]">
-        <GeographicReferenceMap roads={visibleRoads} selectedRoadId={selectedRoadId} onSelectRoad={setSelectedRoadId} focusGroup={groupNumber} />
+        <GeographicReferenceMap roads={visibleRoads} selectedRoadId={selectedRoadId} onSelectRoad={setSelectedRoadId} focusGroup={groupNumber} selectedNodePosition={selectedNodePosition} />
         <aside className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm" aria-live="polite">
           {activeGroup ? <p className="mb-3 rounded-lg bg-amber-50 p-2 text-xs font-medium text-amber-900">Group {activeGroup.groupNumber}: {activeGroup.roadLineCount} mapped lines. Grouping is geometric only, not proof of disconnected roads.</p> : null}
           <h3 className="font-semibold">Selected road</h3>
@@ -129,6 +134,47 @@ export default function GeographicReferenceWorkspace() {
             <li>Other: {counts.other}</li>
           </ul>
         </aside>
+      </div>
+      <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4" aria-label="OSM source node inspection">
+        <h3 className="font-semibold">Source-node topology inspection</h3>
+        {topology.status === "missing_node_ids" ? (
+          <p className="mt-2 text-sm text-slate-600">This imported file does not include original OSM node IDs. Back up the GeoJSON and refresh it using the upgraded importer to enable node-based inspection. Coordinate grouping alone is not proof of road access.</p>
+        ) : (
+          <>
+            <p className="mt-2 text-xs text-slate-600">Research only · source node references on {topology.waysWithNodeIds} of {topology.roadLines} road lines. {topology.waysWithoutNodeIds > 0 ? "Partial source coverage: unmatched ways are not assessed." : "All imported ways have source node IDs."}</p>
+            <dl className="mt-3 grid grid-cols-2 gap-3 text-xs sm:grid-cols-4">
+              <div><dt className="text-slate-500">Shared OSM nodes</dt><dd className="text-lg font-semibold">{topology.sharedOsmNodes}</dd></div>
+              <div><dt className="text-slate-500">Candidate groups</dt><dd className="text-lg font-semibold">{topology.candidateWayGroups}</dd></div>
+              <div><dt className="text-slate-500">Coordinate collisions</dt><dd className="text-lg font-semibold">{topology.coordinateCollisionLocations}</dd></div>
+              <div><dt className="text-slate-500">Review flags</dt><dd className="text-lg font-semibold">{topology.flaggedSharedNodes}</dd></div>
+            </dl>
+            {topology.reviewExamples.length > 0 ? (
+              <div className="mt-3 flex flex-wrap items-end gap-3">
+                <label className="text-sm font-semibold">
+                  Inspect flagged OSM node
+                  <select value={selectedNodeId ?? ""} onChange={event => {
+                    const id = Number(event.target.value);
+                    setSelectedNodeId(event.target.value ? id : null);
+                    setGroupNumber(0); setFilter("all"); setSelectedRoadId(null);
+                  }} className="mt-1 block max-w-full rounded-lg border border-slate-300 bg-white px-3 py-2">
+                    <option value="">Choose source node</option>
+                    {topology.reviewExamples.slice(0, 30).map(item =>
+                      <option key={item.nodeId} value={item.nodeId}>Node {item.nodeId} · {item.reasons[0]}</option>
+                    )}
+                  </select>
+                </label>
+                {selectedNode ? (
+                  <div className="text-xs text-slate-700">
+                    <p>Mapped ways: {selectedNode.wayIds.join(", ")}</p>
+                    <p>Review: {selectedNode.reasons.join("; ")}</p>
+                    <a href={selectedNode.sourceUrl} target="_blank" rel="noopener noreferrer" className="font-semibold text-teal-700 underline">View OSM node source</a>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+            <p className="mt-3 text-xs text-amber-900">Shared source node IDs indicate OSM data relationships only. They do not verify turns, accessibility, road safety or live flooding. The map remains separate from the demonstration scenario.</p>
+          </>
+        )}
       </div>
       <p role="status" className="mt-2 text-sm text-slate-600">{roadMessage}</p>
       <p className="mt-3 text-xs text-slate-600">Map data © OpenStreetMap contributors. The background tiles require internet access; line data comes from your imported GeoJSON file.</p>

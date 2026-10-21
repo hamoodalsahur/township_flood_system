@@ -6,6 +6,16 @@ import { bbrReferencePoints, isValidLonLat } from "@/lib/bbr-reference";
 import { roadStyle } from "@/lib/bbr-road-display";
 import type { RoadFeature } from "@/lib/bbr-roads";
 
+function FocusSelectedNode({ selectedNodePosition }: { selectedNodePosition: [number, number] | null }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!selectedNodePosition) return;
+    const [longitude, latitude] = selectedNodePosition;
+    map.setView([latitude, longitude], 16, { animate: false });
+  }, [map, selectedNodePosition?.[0], selectedNodePosition?.[1]]);
+  return null;
+}
+
 function FocusSelectedGroup({ roads, focusGroup }: { roads: RoadFeature[]; focusGroup: number }) {
   const map = useMap();
   useEffect(() => {
@@ -23,11 +33,13 @@ export default function GeographicReferenceMap({
   selectedRoadId,
   onSelectRoad,
   focusGroup = 0,
+  selectedNodePosition = null,
 }: {
   roads?: RoadFeature[];
   selectedRoadId: string | null;
   onSelectRoad: (id: string) => void;
   focusGroup?: number;
+  selectedNodePosition?: [number, number] | null;
 }) {
   return (
     <div className="overflow-hidden rounded-xl border border-slate-200">
@@ -44,6 +56,12 @@ export default function GeographicReferenceMap({
         />
         <ZoomControl position="topright" />
         <FocusSelectedGroup roads={roads} focusGroup={focusGroup} />
+        <FocusSelectedNode selectedNodePosition={selectedNodePosition} />
+        {selectedNodePosition ? <CircleMarker
+          center={[selectedNodePosition[1], selectedNodePosition[0]]} radius={10}
+          pathOptions={{ color: "#b45309", fillColor: "#fbbf24", fillOpacity: 0.9, weight: 3 }}>
+          <Tooltip permanent>Mapped OSM node — review only</Tooltip>
+        </CircleMarker> : null}
         {roads.map(road => {
           const selected = selectedRoadId === road.properties.id;
           return (
