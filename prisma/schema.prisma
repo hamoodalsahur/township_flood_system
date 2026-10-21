@@ -151,8 +151,22 @@ model HazardReport {
   reviewedAt  DateTime?
   sourceMode  String   @default("simulation")
   createdAt   DateTime @default(now())
+  evidence    HazardEvidence?
 
   @@index([reviewState, createdAt])
   @@index([category, createdAt])
   @@map("hazard_reports")
+}
+
+/** Private demo evidence; never returned by public incident APIs. */
+model HazardEvidence {
+  id          String       @id @default(cuid())
+  reportId    String       @unique
+  report      HazardReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  mimeType    String
+  base64Data  String
+  bytes       Int
+  status      String       @default("private_unreviewed")
+  createdAt   DateTime     @default(now())
+  @@map("hazard_evidence")
 }

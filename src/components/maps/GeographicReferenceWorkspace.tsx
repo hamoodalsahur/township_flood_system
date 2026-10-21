@@ -11,6 +11,7 @@ import { roadReviewFlags } from "@/lib/bbr-road-review-flags";
 import { inspectOsmNodeTopology } from "@/lib/bbr-osm-topology";
 import { CATEGORY_LABELS, DEMO_HAZARDS, HAZARD_CATEGORIES, filterDemoHazards, type HazardCategory } from "@/lib/demo-hazards";
 import { HAZARD_SYMBOLS } from "@/lib/hazard-symbols";
+import { prepareDemoPhoto } from "@/lib/demo-photo-client";
 
 const GeographicReferenceMap = dynamic(() => import("./GeographicReferenceMap"), {
   ssr: false,
@@ -43,6 +44,7 @@ export default function GeographicReferenceWorkspace() {
   const [reportDescription, setReportDescription] = useState("");
   const [sendingReport, setSendingReport] = useState(false);
   const [reportMessage, setReportMessage] = useState("");
+  const [evidenceFile, setEvidenceFile] = useState<File | null>(null);
   async function loadStoredHazards() {
     try {
       const response=await fetch("/api/v2/hazards",{cache:"no-store"});
@@ -74,10 +76,26 @@ export default function GeographicReferenceWorkspace() {
         method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify({category:reportCategory,impact:reportImpact,description:reportDescription,coordinates:draftPosition})
       });
-      const result=await response.json() as {error?:string};
+      const result=await response.json() as {error?:string;report?:{id:string}};
       if(!response.ok)throw Error(result.error??"Report not saved");
-      setReportDescription("");setDraftPosition(null);
-      setReportMessage("Fictional incident submitted and queued for management review. No road closure created.");
+      let photoNote = "";
+      if(evidenceFile && result.report?.id) {
+        try {
+          const encoded = await prepareDemoPhoto(evidenceFile);
+          const upload=await fetch(`/api/v2/hazards/${result.report.id}/evidence`,{
+            method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(encoded)
+          });
+          if(!upload.ok) {
+            const failure=await upload.json() as {error?:string};
+            throw Error(failure.error??"Photo upload failed");
+          }
+          photoNote=" Private demo photo attached for operator review.";
+        } catch (photoError) {
+          photoNote=" Report saved, but photo could not be attached: "+(photoError instanceof Error?photoError.message:"unknown issue");
+        }
+      }
+      setReportDescription("");setDraftPosition(null);setEvidenceFile(null);
+      setReportMessage("Fictional incident submitted. No road closure created."+photoNote);
       window.dispatchEvent(new Event("township-hazards-updated"));
       await loadStoredHazards();
     } catch(e){setReportMessage(e instanceof Error?e.message:"Unable to submit demo hazard");}
@@ -190,6 +208,11 @@ export default function GeographicReferenceWorkspace() {
           </label>
           <label className="text-sm font-semibold sm:col-span-2">Fictional report description
             <textarea value={reportDescription} maxLength={400} rows={2} onChange={e=>setReportDescription(e.target.value)} placeholder="Describe the made-up road issue (8–400 characters)." className="mt-1 block w-full rounded-lg border border-slate-300 p-2" />
+          </label>
+          <label className="text-sm font-semibold sm:col-span-2">Optional demonstration photo (JPEG/PNG, max 5 MB before processing)
+            <input type="file" accept="image/jpeg,image/png" onChange={e=>setEvidenceFile(e.target.files?.[0]??null)}
+              className="mt-2 block w-full rounded-lg border border-slate-300 bg-white p-2 text-xs" />
+            <span className="mt-1 block text-xs font-normal leading-5 text-slate-600">Processed to a small JPEG without original EXIF metadata. Private to local management; never shown on the public map. Use fictional/sample images without identifiable people.</span>
           </label>
           <div className="flex flex-wrap items-center justify-between gap-3 sm:col-span-2">
             <p className="text-xs text-slate-600">{draftPosition ? `Selected demo coordinate: ${draftPosition[1].toFixed(5)}, ${draftPosition[0].toFixed(5)}` : "Click a location on the map above to place your draft pin."}</p>
