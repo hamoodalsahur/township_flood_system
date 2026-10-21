@@ -78,6 +78,20 @@ export default function NetworkMap({ zones, nodes, roads, selectedId, onSelect }
           </Polyline>
         );
       })}
+      {roads.filter(road => road.status === "confirmed_closed").map(road => {
+        const start = nodeLookup.get(road.fromNodeId);
+        const end = nodeLookup.get(road.toNodeId);
+        if (!start || !end) return null;
+        return (
+          <CircleMarker key={road.id + "-closed"}
+            center={toPosition((start.x + end.x) / 2, (start.y + end.y) / 2)}
+            radius={9}
+            eventHandlers={{ click: () => onSelect(road.id) }}
+            pathOptions={{ color: "#ffffff", weight: 3, fillColor: "#b91c1c", fillOpacity: 1 }}>
+            <Tooltip direction="top">CLOSED IN SIMULATION · {road.label}</Tooltip>
+          </CircleMarker>
+        );
+      })}
       {nodes.map(node => (
         <CircleMarker
           key={node.id}
