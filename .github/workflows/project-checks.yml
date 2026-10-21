@@ -1,0 +1,36 @@
+name: Check tests and build
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DATABASE_URL: file:./dev.db
+      DEMO_OPERATOR_KEY: ci-only-example-key-not-for-use
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      # package-lock.json is not yet tracked in this project; use npm install.
+      - name: Install project dependencies
+        run: npm install --no-audit --no-fund
+      - name: Prepare Prisma client
+        run: npx prisma generate
+      - name: Exercise unit tests
+        run: npm test
+      - name: Verify TypeScript
+        run: npm run typecheck
+      - name: Build the Next.js application
+        run: npm run build
