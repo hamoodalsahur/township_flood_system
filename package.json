@@ -12,7 +12,8 @@
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
-    "geo:import": "tsx scripts/import-bbr-roads.ts"
+    "geo:import": "tsx scripts/import-bbr-roads.ts",
+    "geo:audit": "tsx scripts/audit-bbr-roads.ts"
   },
   "dependencies": {
     "next": "^15.5.0",
