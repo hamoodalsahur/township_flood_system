@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
-import { CATEGORY_LABELS, HAZARD_CATEGORIES, type HazardCategory } from "@/lib/demo-hazards";
-type RecordItem={id:string;category:string;description:string;impact:string;reviewState:string;createdAt:string};
+import { CATEGORY_LABELS, type HazardCategory } from "@/lib/demo-hazards";
+import { relatedReports } from "@/lib/v2-related-reports";
+type RecordItem={id:string;category:string;description:string;impact:string;reviewState:string;createdAt:string;latitude:number;longitude:number};
 export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
   const [items,setItems]=useState<RecordItem[]>([]);
   const [notes,setNotes]=useState<Record<string,string>>({});
@@ -55,6 +56,7 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
       {items.map(item=><article key={item.id} className="rounded-xl border border-slate-200 p-4">
         <div className="flex flex-wrap items-center justify-between gap-2"><strong>{CATEGORY_LABELS[item.category as HazardCategory]??item.category}</strong><span className="text-xs font-bold uppercase text-orange-700">{item.reviewState} · DEMO</span></div>
         <p className="mt-1 text-sm text-slate-700">{item.description}</p>
+        {item.reviewState==="unverified" ? <p className="mt-2 rounded-lg bg-indigo-50 p-3 text-xs text-indigo-900">Rule-based triage (not AI): {relatedReports(item,items).priority.replaceAll("_"," ")}. Possible related report IDs: {relatedReports(item,items).ids.join(", ")||"none"}. Operator review required.</p> : null}
         <p className="mt-1 text-xs text-slate-500">Submitted impact: {item.impact.replaceAll("_"," ")} · {new Date(item.createdAt).toLocaleString()}</p>
         <div className="mt-3">
           <button type="button" onClick={()=>void viewEvidence(item.id)} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700">View attached private photo (if any)</button>
