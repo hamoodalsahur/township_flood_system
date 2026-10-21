@@ -22,7 +22,7 @@ export default function MapWorkspace({ variant }: { variant: "resident" | "manag
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const reload = useCallback(async (signal?: AbortSignal) => {
+  const reload = useCallback(async (signal?: AbortSignal, focusOnChange = false) => {
     setLoading(true);
     setError(null);
     try {
@@ -39,6 +39,11 @@ export default function MapWorkspace({ variant }: { variant: "resident" | "manag
         !Array.isArray(roads.roads)
       ) throw new Error("Unexpected source mode or incompatible map data");
       setData({ zones, roads });
+      if (focusOnChange) {
+        const target = roads.roads.find(road => road.id === "RD-DEMO-WEST-GATE" && road.status !== "unknown")
+          ?? roads.roads.find(road => road.corridorType !== "park_trail" && road.status !== "unknown");
+        setSelectedId(target?.id ?? null);
+      }
     } catch (cause) {
       if (signal?.aborted) return;
       setData(null);
@@ -49,7 +54,7 @@ export default function MapWorkspace({ variant }: { variant: "resident" | "manag
   }, []);
 
   useEffect(() => {
-    const listener = () => { void reload(); };
+    const listener = () => { void reload(undefined, true); };
     window.addEventListener(changeEvent, listener);
     return () => window.removeEventListener(changeEvent, listener);
   }, [reload]);
@@ -69,9 +74,16 @@ export default function MapWorkspace({ variant }: { variant: "resident" | "manag
   }, [data, selectedId]);
 
   const gatewayCount = data?.roads.roads.filter(road => road.corridorType === "ingress_egress_gateway").length ?? 0;
+  const affectedRoads = data?.roads.roads.filter(road =>
+    road.corridorType !== "park_trail" && ["at_risk", "reported_flooding_unverified", "confirmed_closed"].includes(road.status)
+  ) ?? [];
+  const closedRoads = affectedRoads.filter(road => road.status === "confirmed_closed");
+  const reportedRoads = affectedRoads.filter(road => road.status === "reported_flooding_unverified");
+  const riskyRoads = affectedRoads.filter(road => road.status === "at_risk");
+  const featuredRoad = affectedRoads.find(road => road.id === "RD-DEMO-WEST-GATE") ?? affectedRoads[0] ?? null;
 
   return (
-    <section className="mt-6 rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm sm:p-6" aria-label="Interactive schematic road network">
+    <section id="demo-network" className="mt-6 scroll-mt-6 rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm sm:p-6" aria-label="Interactive schematic road network">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-teal-700">Simulation · schematic XY · not GPS</p>
@@ -85,6 +97,25 @@ export default function MapWorkspace({ variant }: { variant: "resident" | "manag
         <AlertTriangle size={16} className="mr-2 inline-block" aria-hidden="true" />
         SCHEMATIC DEMONSTRATION — NOT LIVE CONDITIONS. No real BBR road coordinates, closures, warnings or navigation instructions.
       </p>
+      {data && !error ? (
+        <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50/80 p-3 sm:p-4" aria-label="Simulated network impact">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-600">Current simulated road impact</p>
+              <p className="mt-1 text-sm font-semibold text-slate-900">{featuredRoad
+                ? featuredRoad.label + " — " + statusLabel(featuredRoad.status)
+                : "No active road disruption flags in the fictional network; status remains unknown."}</p>
+            </div>
+            {featuredRoad ? <button type="button" onClick={() => setSelectedId(featuredRoad.id)}
+              className="rounded-lg border border-teal-200 bg-white px-3 py-2 text-xs font-bold text-teal-800 transition hover:bg-teal-50">Inspect affected road</button> : null}
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-semibold">
+            <span className="rounded-full bg-rose-100 px-3 py-1.5 text-rose-800">{closedRoads.length} closed · demo</span>
+            <span className="rounded-full bg-orange-100 px-3 py-1.5 text-orange-800">{reportedRoads.length} flooding reports · unverified</span>
+            <span className="rounded-full bg-amber-100 px-3 py-1.5 text-amber-900">{riskyRoads.length} at risk · demo</span>
+          </div>
+        </div>
+      ) : null}
       {loading && !data ? <div className="flex h-64 items-center justify-center text-slate-600" role="status">Loading network from database…</div> : null}
       {error ? (
         <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-5 text-red-900">
@@ -97,10 +128,11 @@ export default function MapWorkspace({ variant }: { variant: "resident" | "manag
             <div className="overflow-hidden rounded-xl border border-slate-200">
               <NetworkMap zones={data.zones.zones} nodes={data.roads.nodes} roads={data.roads.roads} selectedId={selectedId} onSelect={setSelectedId} />
               <div className="flex flex-wrap gap-x-4 gap-y-2 border-t bg-white px-3 py-3 text-xs text-slate-600">
-                <span>● Gateway node</span>
-                <span className="text-slate-600">━ Road link</span>
+                <span className="font-semibold text-rose-700">● Closed · demo</span>
+                <span className="font-semibold text-orange-700">━ Reported · unverified</span>
+                <span className="font-semibold text-amber-700">━ At risk · demo</span>
+                <span>━ Grey: unknown</span>
                 <span className="text-violet-700">┄ Trail (not drivable)</span>
-                <span>Statuses: see coloured segments</span>
               </div>
             </div>
             <aside className="rounded-xl border border-slate-200 bg-slate-50 p-4" aria-live="polite">
