@@ -53,3 +53,28 @@ test("mixed-split vectors and invalid thresholds are rejected",()=>{
  assert.throws(()=>evaluateEmbeddings(cases,cases.map(()=>[1]),4));
  assert.throws(()=>evaluateEmbeddings([cases[0],evaluationSplit("holdout")[0]],[[1],[1]],0.78));
 });
+
+test("language recall separates English, Malay and bilingual positive pairs",()=>{
+ const cases=evaluationSplit("holdout");
+ const groups=[...new Set(cases.map(c=>c.group))];
+ const vectors=cases.map(c=>groups.map(g=>g===c.group?1:0));
+ const rows=positivePairLanguageRecall(cases,vectors,0.78);
+ assert.equal(rows.length,3);
+ assert.ok(rows.every(row=>row.positivePairs>0));
+ assert.ok(rows.every(row=>row.recall===1));
+});
+test("diagnostics expose a missed related pair and a false match",()=>{
+ const cases=evaluationSplit("development");
+ const vectors=cases.map((c,i)=>i===0?[0,1]:[1,0]);
+ const diag=diagnosticErrors(cases,vectors,0.78,2);
+ assert.ok(diag.falsePositives.length>0);
+ assert.ok(diag.falseNegatives.length>0);
+ assert.ok(diag.falsePositives[0].leftDescription.length>10);
+});
+test("candidate selection ignores holdout performance entirely",()=>{
+ const dev=evaluationSplit("development");
+ const groups=[...new Set(dev.map(c=>c.group))];
+ const vectors=dev.map(c=>groups.map(g=>g===c.group?1:0));
+ const threshold=chooseDevelopmentThreshold(evaluateThresholds(dev,vectors));
+ assert.equal(threshold,0.9); // All development cutoffs tie at perfect F1; prefer stricter threshold.
+});
