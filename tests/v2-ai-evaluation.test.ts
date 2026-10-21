@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import {test} from "node:test";
-import {EVALUATION_PAIRS} from "../src/lib/v2-evaluation-fixtures";
+import {EVALUATION_PAIRS,MALAY_LANGUAGE_CASE_IDS} from "../src/lib/v2-evaluation-fixtures";
 import {evaluatePairs} from "../src/lib/v2-ai-evaluation";
 import {HAZARD_CATEGORIES} from "../src/lib/demo-hazards";
 test("fictional evaluation covers hazard categories, languages and hard negatives",()=>{
@@ -10,6 +10,8 @@ test("fictional evaluation covers hazard categories, languages and hard negative
  assert.equal(EVALUATION_PAIRS.filter(p=>p.sameEvent).length,21);
  assert.equal(EVALUATION_PAIRS.filter(p=>!p.sameEvent).length,21);
  assert.ok(EVALUATION_PAIRS.some(p=>/pokok|jalan|lubang|longkang/i.test(p.first)));
+ assert.equal(MALAY_LANGUAGE_CASE_IDS.length,13);
+ assert.ok(MALAY_LANGUAGE_CASE_IDS.every(id=>EVALUATION_PAIRS.some(p=>p.id===id)));
 });
 test("precision recall and F1 are calculated from explicit false positives and negatives",()=>{
  const r=evaluatePairs([

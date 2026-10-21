@@ -45,3 +45,9 @@ export const EVALUATION_PAIRS:readonly LabelledPair[]=[
 {id:"other-05",category:"other",first:"Broken footpath rail at the north school.",second:"Loose drain cover outside the south shops.",sameEvent:false},
 {id:"other-06",category:"other",first:"Papan tanda rosak depan kedai.",second:"Longkang terbuka di taman permainan.",sameEvent:false},
 ];
+
+/** Hand-tagged language slices of this small fictional evaluation dataset. */
+export const MALAY_LANGUAGE_CASE_IDS = [
+ "tree-03","tree-06","flood-02","flood-06","hole-02","hole-06",
+ "work-03","work-06","block-03","block-06","storm-02","storm-06","other-06"
+] as const;
