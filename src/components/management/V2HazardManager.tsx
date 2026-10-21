@@ -10,6 +10,19 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
   const [message,setMessage]=useState("");
   const [busy,setBusy]=useState(false);
   const [evidenceUrls,setEvidenceUrls]=useState<Record<string,string>>({});
+  const [aiResults,setAiResults]=useState<Record<string,{model:string;analysed:number;matches:{id:string;similarity:number;category:string}[];disclaimer:string}>>({});
+  const [aiErrors,setAiErrors]=useState<Record<string,string>>({});
+  const [aiBusy,setAiBusy]=useState<string|null>(null);
+  async function runAiAnalysis(id:string) {
+    setAiBusy(id);setAiErrors(old=>({...old,[id]:""}));
+    try {
+      const response=await fetch("/api/v2/hazards/"+id+"/ai-triage",{method:"POST",headers:{"x-demo-operator-key":operatorKey}});
+      const result=await response.json() as {error?:string;model:string;analysed:number;matches:{id:string;similarity:number;category:string}[];disclaimer:string};
+      if(!response.ok)throw Error(result.error??"AI comparison failed");
+      setAiResults(old=>({...old,[id]:result}));
+    }catch(error){setAiErrors(old=>({...old,[id]:error instanceof Error?error.message:"AI unavailable"}));}
+    finally{setAiBusy(null);}
+  }
   async function viewEvidence(id:string) {
     setMessage("");
     try {
@@ -57,6 +70,18 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
         <div className="flex flex-wrap items-center justify-between gap-2"><strong>{CATEGORY_LABELS[item.category as HazardCategory]??item.category}</strong><span className="text-xs font-bold uppercase text-orange-700">{item.reviewState} · DEMO</span></div>
         <p className="mt-1 text-sm text-slate-700">{item.description}</p>
         {item.reviewState==="unverified" ? <p className="mt-2 rounded-lg bg-indigo-50 p-3 text-xs text-indigo-900">Rule-based triage (not AI): {relatedReports(item,items).priority.replaceAll("_"," ")}. Possible related report IDs: {relatedReports(item,items).ids.join(", ")||"none"}. Operator review required.</p> : null}
+        {item.reviewState==="unverified"?<div className="mt-2 rounded-lg border border-violet-200 bg-violet-50 p-3 text-xs text-violet-950">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div><p className="font-bold">AI semantic matching · optional</p><p className="mt-1">Compare fictional descriptions with a model. Human review required.</p></div>
+            <button type="button" disabled={aiBusy!==null} onClick={()=>void runAiAnalysis(item.id)} className="rounded-lg bg-violet-800 px-3 py-2 font-semibold text-white disabled:opacity-50">{aiBusy===item.id?"Analysing…":"Run AI comparison"}</button>
+          </div>
+          {aiErrors[item.id]?<p role="status" className="mt-2 text-rose-800">{aiErrors[item.id]}</p>:null}
+          {aiResults[item.id]?<div className="mt-3 space-y-1">
+            <p className="font-semibold">Model: {aiResults[item.id].model} · compared {aiResults[item.id].analysed} reports</p>
+            {aiResults[item.id].matches.length?aiResults[item.id].matches.map(match=><p key={match.id}>Possible match: {match.id} · similarity {(match.similarity*100).toFixed(1)}% · {match.category.replaceAll("_"," ")}</p>):<p>No strong semantic matches found.</p>}
+            <p className="mt-2 text-violet-800">{aiResults[item.id].disclaimer}</p>
+          </div>:null}
+        </div>:null}
         <p className="mt-1 text-xs text-slate-500">Submitted impact: {item.impact.replaceAll("_"," ")} · {new Date(item.createdAt).toLocaleString()}</p>
         <div className="mt-3">
           <button type="button" onClick={()=>void viewEvidence(item.id)} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700">View attached private photo (if any)</button>
