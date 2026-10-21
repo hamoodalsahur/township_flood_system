@@ -48,6 +48,15 @@ If `.env` already exists, check its settings instead of overwriting it.
 
 Next, we'll tighten operator access and add a proper history of changes. Then we can improve the analytics and start replacing the fictional map with geographic information we can actually verify.
 
+
+## V2 research — local AI and evaluation
+
+The geographic hazard research workspace includes distinct category icons, persistent fictional reports, optional private photos with separately approved map display, and an operator queue. The optional AI button uses **local Ollama** by default (`nomic-embed-text`) for *semantic similarity suggestions*, not automatic verification or closures.
+
+A new labelled **fictional** benchmark can be run with `npm run ai:evaluate` after installing and starting the Ollama model. Operators can record whether suggested fictional pairs describe the same or different events; their choices are audited and kept separate from report corroboration. See [AI evaluation and human-feedback guide](docs/v2-ai-evaluation-guide.md).
+
+**Back up SQLite before `npm run db:push` when adopting this milestone**; it adds a new `AiPairDecision` table. Preserve your locally imported `public/data/bbr-roads.geojson`. Do not use the prototype for actual travel or hazard decisions.
+
 ## Project notes
 
 - [Development roadmap](docs/roadmap.md)

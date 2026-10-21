@@ -152,6 +152,8 @@ model HazardReport {
   sourceMode  String   @default("simulation")
   createdAt   DateTime @default(now())
   evidence    HazardEvidence?
+  aiPairsLeft   AiPairDecision[] @relation("V2AiPairLeft")
+  aiPairsRight  AiPairDecision[] @relation("V2AiPairRight")
 
   @@index([reviewState, createdAt])
   @@index([category, createdAt])
@@ -169,4 +171,22 @@ model HazardEvidence {
   status      String       @default("private_unreviewed") // private_unreviewed | approved_public_demo | private_rejected
   createdAt   DateTime     @default(now())
   @@map("hazard_evidence")
+}
+
+/** Human-labelled candidate incident pairs in fictional study only; never a road condition. */
+model AiPairDecision {
+  id            String       @id @default(cuid())
+  leftReportId  String
+  rightReportId String
+  leftReport    HazardReport @relation("V2AiPairLeft", fields: [leftReportId], references: [id], onDelete: Cascade)
+  rightReport   HazardReport @relation("V2AiPairRight", fields: [rightReportId], references: [id], onDelete: Cascade)
+  judgement     String       // same_event | different_event
+  note          String
+  sourceMode    String       @default("simulation")
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@unique([leftReportId, rightReportId])
+  @@index([updatedAt])
+  @@map("v2_ai_pair_decisions")
 }

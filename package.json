@@ -8,6 +8,7 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/*.test.ts",
+    "ai:evaluate": "tsx scripts/evaluate-v2-ai.ts",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",

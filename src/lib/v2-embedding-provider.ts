@@ -8,10 +8,12 @@ export function embeddingConfig(env:NodeJS.ProcessEnv=process.env) {
 }
 function validVectors(value:unknown,count:number):number[][] {
  if(!Array.isArray(value)||value.length!==count)throw Error("Embedding model returned an unexpected result count");
- return value.map(vector=>{
+ const parsed=value.map(vector=>{
   if(!Array.isArray(vector)||vector.length===0||vector.length>8192||!vector.every((n:unknown)=>typeof n==="number"&&Number.isFinite(n)))throw Error("Embedding model returned invalid vectors");
   return vector as number[];
  });
+ if(parsed.some(vector=>vector.length!==parsed[0].length))throw Error("Inconsistent embedding dimensions");
+ return parsed;
 }
 export async function embedDescriptions(input:string[], env:NodeJS.ProcessEnv=process.env) {
  const cfg=embeddingConfig(env);
