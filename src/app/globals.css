@@ -4,20 +4,23 @@
 
 :root {
   color-scheme: light;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
 }
-
+html { scroll-behavior: smooth; }
 body {
-  background: #f5f8fb;
-  color: #102840;
   min-height: 100vh;
+  background: #f6f8f9;
+  color: #172c3a;
+  -webkit-font-smoothing: antialiased;
 }
-
-a {
-  text-decoration: none;
+a { text-decoration: none; }
+:where(a, button, input, select, textarea):focus-visible {
+  outline: 3px solid #0f766e;
+  outline-offset: 3px;
 }
-
-a:focus-visible {
-  outline: 3px solid #176891;
-  outline-offset: 4px;
+::selection { background: #c7ede6; color: #134e4a; }
+.leaflet-container { font-family: inherit; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
 }

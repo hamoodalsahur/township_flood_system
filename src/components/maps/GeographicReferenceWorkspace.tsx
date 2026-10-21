@@ -69,14 +69,19 @@ export default function GeographicReferenceWorkspace() {
   }), [roads]);
 
   return (
-    <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6" aria-label="BBR geographic reference map">
-      <div className="flex items-center gap-2 text-teal-800"><MapPinned size={19} aria-hidden="true" /><p className="text-xs font-bold uppercase tracking-wide">Geographic reference · WGS84</p></div>
-      <h2 className="mt-1 text-xl font-semibold">Bandar Bukit Raja area reference</h2>
-      <p className="mt-2 text-sm leading-6 text-slate-600">OpenStreetMap road geometry is displayed for geographic context only. These lines are not a verified connected graph, township boundary, real flood warning or safe travel guidance. Our simulated scenario remains separate.</p>
-      <div className="mt-4 flex flex-wrap items-end justify-between gap-3">
+    <section className="mt-6 rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_18px_55px_-45px_rgba(15,41,55,.45)] sm:p-6" aria-label="BBR geographic reference map">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2 text-teal-800"><MapPinned size={18} aria-hidden="true" /><p className="text-xs font-bold uppercase tracking-[.14em]">Interactive area map</p></div>
+          <h2 className="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">Bandar Bukit Raja · Road explorer</h2>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">Browse mapped roads, filter by type and select a line to inspect its OpenStreetMap source.</p>
+        </div>
+        <span className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-900"><span className="h-2 w-2 rounded-full bg-amber-500"/> Unverified map data</span>
+      </div>
+      <div className="mt-5 flex flex-wrap items-end justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/80 p-3 sm:p-4">
         <label className="block text-sm font-semibold">
           Show road category
-          <select value={filter} onChange={event => { setFilter(event.target.value as RoadFilter); setSelectedRoadId(null); setSelectedNodeId(null); }} className="mt-1 block rounded-lg border border-slate-300 bg-white px-3 py-2">
+          <select value={filter} onChange={event => { setFilter(event.target.value as RoadFilter); setSelectedRoadId(null); setSelectedNodeId(null); }} className="mt-1 block rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-teal-500">
             {categories.map(category => <option key={category.value} value={category.value}>{category.label}</option>)}
           </select>
         </label>
@@ -89,11 +94,11 @@ export default function GeographicReferenceWorkspace() {
         </label>
         <p className="text-sm text-slate-600">{visibleRoads.length} lines displayed · {roads.length} imported</p>
       </div>
-      <div className="mt-3 grid gap-4 lg:grid-cols-[minmax(0,1fr)_250px]">
+      <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
         <GeographicReferenceMap roads={visibleRoads} selectedRoadId={selectedRoadId} onSelectRoad={setSelectedRoadId} focusGroup={groupNumber} selectedNodePosition={selectedNodePosition} />
-        <aside className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm" aria-live="polite">
+        <aside className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 text-sm" aria-live="polite">
           {activeGroup ? <p className="mb-3 rounded-lg bg-amber-50 p-2 text-xs font-medium text-amber-900">Group {activeGroup.groupNumber}: {activeGroup.roadLineCount} mapped lines. Grouping is geometric only, not proof of disconnected roads.</p> : null}
-          <h3 className="font-semibold">Selected road</h3>
+          <h3 className="text-xs font-extrabold uppercase tracking-widest text-slate-500">Road details</h3>
           {selectedRoad ? (
             <div className="mt-3 space-y-2">
               <p className="break-words font-semibold">{selectedRoad.properties.name}</p>
@@ -124,9 +129,9 @@ export default function GeographicReferenceWorkspace() {
               <a href={selectedRoad.properties.sourceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 break-all font-semibold text-teal-700 underline">Inspect OSM way <ExternalLink size={14}/></a>
               <button type="button" className="block rounded-lg border px-3 py-1 text-xs" onClick={() => setSelectedRoadId(null)}>Clear selection</button>
             </div>
-          ) : <p className="mt-3 text-slate-600">Select a road line on the map for its name, type and source link.</p>}
+          ) : <div className="mt-4 rounded-xl border border-dashed border-slate-300 bg-white p-4"><MapPinned size={21} className="text-teal-700" aria-hidden="true" /><p className="mt-3 font-semibold text-slate-800">Select a road to explore</p><p className="mt-1 text-sm leading-6 text-slate-600">Click any road line on the map to see its name, mapped attributes and original source.</p></div>}
           <hr className="my-4 border-slate-200"/>
-          <h4 className="font-semibold">Imported road categories</h4>
+          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">Mapped categories</h4>
           <ul className="mt-2 space-y-1 text-xs text-slate-600">
             <li>Major: {counts.major}</li>
             <li>Local: {counts.local}</li>
@@ -135,7 +140,9 @@ export default function GeographicReferenceWorkspace() {
           </ul>
         </aside>
       </div>
-      <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4" aria-label="OSM source node inspection">
+      <details className="group mt-4 rounded-xl border border-slate-200 bg-slate-50/80">
+        <summary className="cursor-pointer rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 focus-visible:outline-teal-600">Advanced research · Node topology and source inspection <span className="ml-1 text-xs font-normal text-slate-500">(expand)</span></summary>
+        <div className="border-t border-slate-200 p-4" aria-label="OSM source node inspection">
         <h3 className="font-semibold">Source-node topology inspection</h3>
         {topology.status === "missing_node_ids" ? (
           <p className="mt-2 text-sm text-slate-600">This imported file does not include original OSM node IDs. Back up the GeoJSON and refresh it using the upgraded importer to enable node-based inspection. Coordinate grouping alone is not proof of road access.</p>
@@ -176,10 +183,12 @@ export default function GeographicReferenceWorkspace() {
           </>
         )}
       </div>
-      <p role="status" className="mt-2 text-sm text-slate-600">{roadMessage}</p>
+      </details>
+      <p role="status" className="mt-3 text-xs text-slate-500">{roadMessage}</p>
       <p className="mt-3 text-xs text-slate-600">Map data © OpenStreetMap contributors. The background tiles require internet access; line data comes from your imported GeoJSON file.</p>
-      <h3 className="mt-4 font-semibold">Reference points and sources</h3>
-      <div className="mt-2 grid gap-3 md:grid-cols-2">
+      <details className="mt-3 rounded-xl border border-slate-200 bg-white">
+        <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Reference points, attribution and source links <span className="ml-1 text-xs font-normal text-slate-500">(expand)</span></summary>
+        <div className="grid gap-3 border-t border-slate-200 p-4 md:grid-cols-2">
         {bbrReferencePoints.features.map(feature => (
           <article key={feature.properties.id} className="rounded-lg border border-slate-200 p-3 text-sm">
             <h4 className="font-semibold">{feature.properties.name}</h4>
@@ -190,7 +199,8 @@ export default function GeographicReferenceWorkspace() {
           </article>
         ))}
       </div>
-      <p className="mt-4 rounded-lg bg-amber-50 p-3 text-xs font-medium text-amber-900">REFERENCE ONLY — NOT LIVE FLOOD INTELLIGENCE. Lines and points do not establish road access, flood safety or directions.</p>
+      </details>
+      <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50/70 px-4 py-3 text-xs leading-5 text-amber-950"><strong>Geographic reference only.</strong> This OSM layer is not an official township boundary or verified connected network, and cannot establish actual flood conditions, road access or safe directions. The simulation below uses separate fictional data.</p>
     </section>
   );
 }
