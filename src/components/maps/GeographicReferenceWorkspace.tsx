@@ -34,8 +34,54 @@ export default function GeographicReferenceWorkspace() {
   const [hazardCategory, setHazardCategory] = useState<HazardCategory | "all">("all");
   const [showDemoHazards, setShowDemoHazards] = useState(true);
   const [selectedHazardId, setSelectedHazardId] = useState<string | null>(null);
-  const visibleHazards = showDemoHazards ? filterDemoHazards(hazardCategory) : [];
-  const selectedHazard = DEMO_HAZARDS.find(hazard => hazard.id === selectedHazardId) ?? null;
+  const [storedHazards, setStoredHazards] = useState<typeof DEMO_HAZARDS>([]);
+  const [hazardError, setHazardError] = useState("");
+  const [draftPosition, setDraftPosition] = useState<[number,number] | null>(null);
+  const [reportCategory, setReportCategory] = useState<HazardCategory>("fallen_tree");
+  const [reportImpact, setReportImpact] = useState("unknown");
+  const [reportDescription, setReportDescription] = useState("");
+  const [sendingReport, setSendingReport] = useState(false);
+  const [reportMessage, setReportMessage] = useState("");
+  async function loadStoredHazards() {
+    try {
+      const response=await fetch("/api/v2/hazards",{cache:"no-store"});
+      if(!response.ok) throw Error("Demo incident API unavailable. Run npm run db:push.");
+      const payload=await response.json() as {reports:{id:string;category:HazardCategory;description:string;longitude:number;latitude:number;impact:string;reviewState:string;createdAt:string}[]};
+      setStoredHazards(payload.reports.map(item=>({
+        id:item.id,category:item.category,title:CATEGORY_LABELS[item.category]+" (submitted demo)",
+        description:item.description,coordinates:[item.longitude,item.latitude],
+        impact:item.impact as typeof DEMO_HAZARDS[number]["impact"],
+        reportedAt:item.createdAt,status:"fictional_unverified",sourceMode:"simulation"
+      })));
+      setHazardError("");
+    } catch(e){setHazardError(e instanceof Error?e.message:"Could not load demo reports");}
+  }
+  useEffect(()=>{
+    void loadStoredHazards();
+    const listener=()=>{void loadStoredHazards();};
+    window.addEventListener("township-hazards-updated",listener);
+    return ()=>window.removeEventListener("township-hazards-updated",listener);
+  },[]);
+  const allHazards=[...DEMO_HAZARDS,...storedHazards];
+  const visibleHazards = showDemoHazards ? filterDemoHazards(hazardCategory,allHazards) : [];
+  const selectedHazard = allHazards.find(hazard => hazard.id === selectedHazardId) ?? null;
+  async function submitDemoHazard() {
+    if(!draftPosition)return;
+    setSendingReport(true);setReportMessage("");
+    try {
+      const response=await fetch("/api/v2/hazards",{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({category:reportCategory,impact:reportImpact,description:reportDescription,coordinates:draftPosition})
+      });
+      const result=await response.json() as {error?:string};
+      if(!response.ok)throw Error(result.error??"Report not saved");
+      setReportDescription("");setDraftPosition(null);
+      setReportMessage("Fictional incident submitted and queued for management review. No road closure created.");
+      window.dispatchEvent(new Event("township-hazards-updated"));
+      await loadStoredHazards();
+    } catch(e){setReportMessage(e instanceof Error?e.message:"Unable to submit demo hazard");}
+    finally{setSendingReport(false);}
+  }
 
   useEffect(() => {
     let active = true;
@@ -117,8 +163,33 @@ export default function GeographicReferenceWorkspace() {
         </label>
         <span className="text-xs font-medium text-slate-600">{visibleHazards.length} fictional marker(s)</span>
       </div>
+      <details className="mt-3 rounded-xl border border-teal-200 bg-teal-50/50" id="report-demo-hazard">
+        <summary className="cursor-pointer px-4 py-3 text-sm font-bold text-teal-900">Report an example hazard · Click a position on the map</summary>
+        <div className="grid gap-3 border-t border-teal-100 p-4 sm:grid-cols-2">
+          <label className="text-sm font-semibold">Hazard category
+            <select value={reportCategory} onChange={e=>setReportCategory(e.target.value as HazardCategory)} className="mt-1 block w-full rounded-lg border border-slate-300 bg-white p-2">
+              {HAZARD_CATEGORIES.map(c=><option key={c} value={c}>{CATEGORY_LABELS[c]}</option>)}
+            </select>
+          </label>
+          <label className="text-sm font-semibold">Suspected road impact
+            <select value={reportImpact} onChange={e=>setReportImpact(e.target.value)} className="mt-1 block w-full rounded-lg border border-slate-300 bg-white p-2">
+              <option value="unknown">Not sure</option><option value="caution">Caution</option>
+              <option value="partial_obstruction">Partially blocked</option><option value="suspected_closure">Possibly closed (unverified)</option>
+            </select>
+          </label>
+          <label className="text-sm font-semibold sm:col-span-2">Fictional report description
+            <textarea value={reportDescription} maxLength={400} rows={2} onChange={e=>setReportDescription(e.target.value)} placeholder="Describe the made-up road issue (8–400 characters)." className="mt-1 block w-full rounded-lg border border-slate-300 p-2" />
+          </label>
+          <div className="flex flex-wrap items-center justify-between gap-3 sm:col-span-2">
+            <p className="text-xs text-slate-600">{draftPosition ? `Selected demo coordinate: ${draftPosition[1].toFixed(5)}, ${draftPosition[0].toFixed(5)}` : "Click a location on the map above to place your draft pin."}</p>
+            <button type="button" disabled={sendingReport||!draftPosition||reportDescription.trim().length<8} onClick={()=>void submitDemoHazard()} className="rounded-lg bg-teal-800 px-4 py-2 text-sm font-bold text-white disabled:opacity-40">Submit fictional report</button>
+          </div>
+          {reportMessage?<p role="status" className="text-sm text-teal-900 sm:col-span-2">{reportMessage}</p>:null}
+        </div>
+      </details>
+      {hazardError?<p role="status" className="mt-2 text-xs text-amber-900">{hazardError}</p>:null}
       <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
-        <GeographicReferenceMap roads={visibleRoads} selectedRoadId={selectedRoadId} onSelectRoad={id => { setSelectedRoadId(id); setSelectedHazardId(null); }} focusGroup={groupNumber} selectedNodePosition={selectedNodePosition} hazards={visibleHazards} onSelectHazard={id => { setSelectedHazardId(id); setSelectedRoadId(null); }} selectedHazardId={selectedHazardId} />
+        <GeographicReferenceMap roads={visibleRoads} selectedRoadId={selectedRoadId} onSelectRoad={id => { setSelectedRoadId(id); setSelectedHazardId(null); }} focusGroup={groupNumber} selectedNodePosition={selectedNodePosition} hazards={visibleHazards} onSelectHazard={id => { setSelectedHazardId(id); setSelectedRoadId(null); }} selectedHazardId={selectedHazardId} selectedLocation={draftPosition} onChooseLocation={setDraftPosition} />
         <aside className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 text-sm" aria-live="polite">
           {activeGroup ? <p className="mb-3 rounded-lg bg-amber-50 p-2 text-xs font-medium text-amber-900">Group {activeGroup.groupNumber}: {activeGroup.roadLineCount} mapped lines. Grouping is geometric only, not proof of disconnected roads.</p> : null}
           {selectedHazard ? (
