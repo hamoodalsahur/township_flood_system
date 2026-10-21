@@ -8,6 +8,13 @@ export type RoadFeature = {
     highway: string;
     sourceUrl: string;
     verification: "osm_unverified";
+    oneway?: string;
+    bridge?: string;
+    tunnel?: string;
+    layer?: string;
+    access?: string;
+    motor_vehicle?: string;
+    junction?: string;
   };
 };
 export type RoadCollection = { type: "FeatureCollection"; features: RoadFeature[] };
@@ -32,6 +39,10 @@ export function validRoadCollection(value: unknown): value is RoadCollection {
       !!props && typeof props.id === "string" && /^osm-way-\d+$/.test(props.id) &&
       typeof props.name === "string" && typeof props.highway === "string" &&
       props.verification === "osm_unverified" &&
+      ["oneway", "bridge", "tunnel", "layer", "access", "motor_vehicle", "junction"].every(tag => {
+        const value = (props as unknown as Record<string, unknown>)[tag];
+        return value === undefined || (typeof value === "string" && value.length <= 120);
+      }) &&
       typeof props.sourceUrl === "string" && /^https:\/\/www\.openstreetmap\.org\/way\/\d+$/.test(props.sourceUrl);
   });
 }

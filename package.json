@@ -16,7 +16,8 @@
     "geo:audit": "tsx scripts/audit-bbr-roads.ts",
     "geo:vertices": "tsx scripts/audit-bbr-vertices.ts",
     "geo:review": "tsx scripts/review-bbr-geometry.ts",
-    "geo:groups": "tsx scripts/review-bbr-groups.ts"
+    "geo:groups": "tsx scripts/review-bbr-groups.ts",
+    "geo:tags": "tsx scripts/audit-bbr-tags.ts"
   },
   "dependencies": {
     "next": "^15.5.0",
