@@ -1,4 +1,4 @@
-import {mayAcceptDemoSubmission,checkDemoJsonSize} from "@/lib/v2-demo-write-guard";
+import {mayAcceptDemoSubmission,checkDemoJsonSize,readBoundedDemoJson,DemoBodyTooLargeError} from "@/lib/v2-demo-write-guard";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { validateDemoImage } from "@/lib/v2-evidence-validation";
@@ -8,7 +8,7 @@ export async function POST(request:Request, context:{params:Promise<{id:string}>
   if(!checkDemoJsonSize(request,320000))return NextResponse.json({error:"Demo image payload is too large"},{status:413});
   try {
     const {id}=await context.params;
-    const body:unknown=await request.json();
+    const body:unknown=await readBoundedDemoJson(request,320000);
     const image=validateDemoImage(body);
     const report=await prisma.hazardReport.findUnique({where:{id},select:{id:true,sourceMode:true,reviewState:true}});
     if(!report||report.sourceMode!=="simulation") return NextResponse.json({error:"Demo report not found"},{status:404});
@@ -21,6 +21,7 @@ export async function POST(request:Request, context:{params:Promise<{id:string}>
     }
     return NextResponse.json({saved:true,disclaimer:"Private demonstration evidence. It is not publicly displayed or proof of a road condition."},{status:201});
   } catch(error) {
+    if(error instanceof DemoBodyTooLargeError)return NextResponse.json({error:"Demo JSON payload is too large"},{status:413});
     if(error instanceof SyntaxError || error instanceof Error && /Invalid|Choose|Photo|Image/.test(error.message))
       return NextResponse.json({error:error.message},{status:400});
     return NextResponse.json({error:"Could not attach demo evidence"},{status:500});

@@ -1,4 +1,4 @@
-import {mayAcceptDemoSubmission,checkDemoJsonSize} from "@/lib/v2-demo-write-guard";
+import {mayAcceptDemoSubmission,checkDemoJsonSize,readBoundedDemoJson,DemoBodyTooLargeError} from "@/lib/v2-demo-write-guard";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { validateHazardSubmission } from "@/lib/v2-hazard-validation";
@@ -17,11 +17,12 @@ export async function POST(request:Request) {
   if(!mayAcceptDemoSubmission(process.env.NODE_ENV))return NextResponse.json({error:"Public demo submissions are disabled outside local development"},{status:403});
   if(!checkDemoJsonSize(request,8192))return NextResponse.json({error:"Demo report payload is too large"},{status:413});
   try {
-    const body: unknown = await request.json();
+    const body: unknown = await readBoundedDemoJson(request,8192);
     const data=validateHazardSubmission(body);
     const record=await prisma.hazardReport.create({data:{category:data.category,description:data.description,longitude:data.coordinates[0],latitude:data.coordinates[1],impact:data.impact,sourceMode:"simulation",reviewState:"unverified"}});
     return NextResponse.json({report:record,disclaimer:"Fictional report recorded. It does not change any road status."},{status:201});
   } catch(error) {
+    if(error instanceof DemoBodyTooLargeError)return NextResponse.json({error:"Demo JSON payload is too large"},{status:413});
     if(error instanceof SyntaxError || error instanceof Error&&/Invalid|Choose|Description|Select/.test(error.message))
       return NextResponse.json({error:error.message},{status:400});
     return NextResponse.json({error:"Could not save demo hazard report."},{status:500});
