@@ -10,3 +10,9 @@ The operator incident APIs still require the separate local-development operator
 No new Prisma migration. Keep your existing SQLite database and local modified BBR GeoJSON. With `npm run dev`, submit a **fictional** geographic hazard report, attach a sample image, verify private image visibility rules, and ensure management review is unchanged. A production deployment must not be used for live public intake. CI tests cover the environment guard and preflight limits.
 
 Follow-up production requirements: authenticated public accounts and operator roles, session protection, server-side image type inspection/transcoding, quotas, rate limiting, retention/revocation policy, and deployment/security review.
+
+## Streamed-byte guard (V2.7)
+
+Both local-demo JSON submission endpoints now check the actual body bytes while reading the stream, even if the `Content-Length` header is absent or inaccurate. The 8,192-byte report and 320,000-byte evidence ceilings return HTTP 413 before database writes. The original field/image validators still apply, and operator approvals remain separate. Unit tests cover normal JSON, oversized bodies, UTF-8 bytes, and malformed JSON.
+
+This is defense in depth for a local development prototype, **not** a public-upload security review, account authentication, rate limiting, media transcoding, or production readiness. Test only with fictional reports and safe sample images; existing local SQLite, `.env` and OSM GeoJSON remain unchanged.
