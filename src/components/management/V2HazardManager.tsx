@@ -6,6 +6,7 @@ import { relatedReports } from "@/lib/v2-related-reports";
 type RecordItem={id:string;category:string;description:string;impact:string;reviewState:string;createdAt:string;latitude:number;longitude:number};
 export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
   const [items,setItems]=useState<RecordItem[]>([]);
+  const [selectedReportId,setSelectedReportId]=useState<string|null>(null);
   const [query,setQuery]=useState("");
   const [stateFilter,setStateFilter]=useState("all");
   const [categoryFilter,setCategoryFilter]=useState("all");
@@ -23,6 +24,15 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
   const [aiResults,setAiResults]=useState<Record<string,{provider:string;model:string;analysed:number;matches:{id:string;similarity:number;category:string}[];disclaimer:string}>>({});
   const [aiErrors,setAiErrors]=useState<Record<string,string>>({});
   const [aiBusy,setAiBusy]=useState<string|null>(null);
+  function toggleReport(id:string) {
+    // Closing or changing rows immediately releases any private local image preview.
+    for(const [key,url] of Object.entries(evidenceUrlsRef.current)){
+      URL.revokeObjectURL(url);
+      delete evidenceUrlsRef.current[key];
+    }
+    setEvidenceUrls({});
+    setSelectedReportId(current=>current===id?null:id);
+  }
   async function runAiAnalysis(id:string) {
     setAiBusy(id);setAiErrors(old=>({...old,[id]:""}));
     try {
@@ -55,6 +65,7 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
       if(!r.ok) throw Error("Could not load fictional reports. Verify your existing local SQLite connection; do not reset your database.");
       const data=await r.json() as {reports:RecordItem[]};
       setItems(data.reports);
+      setSelectedReportId(current=>data.reports.some(item=>item.id===current)?current:null);
     } catch(e){ setMessage(e instanceof Error?e.message:"Unable to load demo reports"); }
     finally{setLoading(false);}
   }
@@ -119,11 +130,21 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
       {loading?<p role="status" className="text-sm text-slate-600">Loading fictional geographic reports…</p>:null}
       {!loading&&items.length>0&&visibleItems.length===0?<p role="status" className="rounded-xl bg-slate-50 p-4 text-sm text-slate-600">No fictional reports match these filters. Clear filters to see all available records.</p>:null}
       {!loading&&items.length===0?<p className="text-sm text-slate-500">No geographic demo reports yet. Submit one from the resident map.</p>:null}
-      {visibleItems.map(item=><article key={item.id} className="rounded-xl border border-slate-200 p-4">
-        <div className="flex flex-wrap items-center justify-between gap-2"><strong>{CATEGORY_LABELS[item.category as HazardCategory]??item.category}</strong><span className="text-xs font-bold uppercase text-orange-700">{item.reviewState} · DEMO</span></div>
-        <p className="mt-1 text-sm text-slate-700">{item.description}</p>
-        <details className="mt-3 rounded-lg border border-slate-200 bg-slate-50/70 p-3">
-         <summary className="cursor-pointer text-sm font-semibold text-teal-900">View report details, optional AI and private evidence review</summary>
+      <ul className="overflow-hidden rounded-xl border border-slate-200 bg-white divide-y divide-slate-100" aria-label="Fictional geographic reports">
+      {visibleItems.map(item=><li key={item.id} className={selectedReportId===item.id?"bg-teal-50/40":"bg-white"}>
+        <button type="button" onClick={()=>toggleReport(item.id)} aria-expanded={selectedReportId===item.id}
+          aria-controls={"report-details-"+item.id}
+          className="flex w-full flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 text-left transition hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-700 sm:flex-nowrap">
+          <span className="min-w-0 flex-1">
+            <strong className="block truncate text-sm text-slate-900">{CATEGORY_LABELS[item.category as HazardCategory]??item.category}</strong>
+            <span className="block truncate text-xs text-slate-500">{item.description}</span>
+          </span>
+          <span className="whitespace-nowrap text-xs text-slate-500">{new Date(item.createdAt).toLocaleDateString()}</span>
+          <span className={"rounded-full px-2 py-1 text-[11px] font-bold uppercase "+(item.reviewState==="unverified"?"bg-amber-50 text-amber-900":"bg-teal-50 text-teal-900")}>{item.reviewState} · DEMO</span>
+          <span className="min-w-12 text-right text-xs font-semibold text-teal-800">{selectedReportId===item.id?"Hide ▲":"View ▼"}</span>
+        </button>
+        {selectedReportId===item.id?<div id={"report-details-"+item.id} className="border-t border-teal-100 bg-white px-4 py-4 sm:px-5">
+        <p className="text-sm leading-6 text-slate-700">{item.description}</p>
         {item.reviewState==="unverified" ? <p className="mt-2 rounded-lg bg-indigo-50 p-3 text-xs text-indigo-900">Rule-based triage (not AI): {relatedReports(item,items).priority.replaceAll("_"," ")}. Possible related report IDs: {relatedReports(item,items).ids.join(", ")||"none"}. Operator review required.</p> : null}
         {item.reviewState==="unverified"?<div className="mt-2 rounded-lg border border-violet-200 bg-violet-50 p-3 text-xs text-violet-950">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -156,8 +177,9 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
             <button type="button" disabled={busy||(notes[item.id]??"").trim().length<8} onClick={()=>void review(item.id,"rejected")} className="rounded-lg border border-slate-300 px-3 py-2 text-xs disabled:opacity-40">Reject report</button>
           </div>
         </div>:null}
-        </details>
-      </article>)}
+        </div>:null}
+      </li>)}
+      </ul>
     </div>
   </section>;
 }
