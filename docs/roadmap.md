@@ -16,24 +16,33 @@
 | V2.7 intake / tag diagnostics | Actual streamed JSON byte limits on demo intake; read-only OSM one-way/access/bridge/tunnel/layer summary | Local-development-only intake, not rate limiting, public authentication, or an authoritative OSM road model. |
 | V2.8 provenance / privacy | Raw unverified candidate-tag caveats and metadata-only private evidence inventory with age indicators | Evidence inventory does not retrieve photos or perform deletion/publication. Age count is **not** a retention policy. |
 
-The implementations above are merged in `main` through PR #54 and were confirmed by the user in combined local sessions. The merged V2.8 tree matched the tested integration tree; always recheck GitHub before further merges.
+The code through **V2.10** is merged into `main` following local combined testing and CI. The features listed above remain restricted to fictional demonstration and unverified OSM research.
 
-## V2.9 proposed, **unmerged / awaiting local approval**
+## Additional completed milestones
 
-- **PR #56** — read-only review-age queue for unverified fictional reports and under-review grouped incidents; metadata only, no emergency/road priority.
-- **PR #57** — SHA-256 digest and coverage summary of the **exact local GeoJSON bytes**; byte equality is not source verification or OSM freshness.
-- **PR #58** — temporary combined integration-testing branch for #56–57, **do not merge**.
-- **PR #59** — roadmap, acceptance and demo-safety documentation refresh (this PR), also awaiting explicit approval.
+| Milestone | Feature | State |
+| --- | --- | --- |
+| V2.9 | Operator-only review-age queue; local GeoJSON SHA-256 fingerprint and coverage manifest; test guidance | Merged, locally tested |
+| V2.10 | Aggregate nearby fictional report-location observations for unverified OSM candidates; private evidence-publication consistency indicators; operator activity overview | Merged, locally tested, CI passed |
 
-Pending PRs can pass CI without user acceptance. **Never merge feature PRs into main before explicit local pass and a successful check on the final reconciled head.**
+## Refinement-first roadmap (current priority)
 
-## Future milestones (planning, not implemented)
+Avoid creating more analytics panels simply to increase feature count. Prioritize reliability, usability, consistency, and end-to-end functionality of the existing resident and management experience.
 
-1. **Structured, human-reviewed road association research**. Draft distinct candidate / reviewed / rejected states, operator reasons and audit history before new database models. Require independently validated, versioned road identifiers. Do not automate real status changes, closures or safety labels. Any eventual Prisma migration requires a **backed-up** local database and explicit user approval; never seed/reset existing data.
-2. **Source integrity and richer topology validation**. Research OSM access restrictions, turn relations, one-way direction, bridges/layers and independently verified road identity. No routing or authoritative conclusions from raw OSM tags.
-3. **Production security and privacy design**, separately gated: true authentication and role separation, storage scanning/transcoding, upload quota/rate limits, photo consent/revocation, retention safeguards and deployment restrictions. Current demo operator key is not real production login.
-4. **End-to-end evaluation and academic methodology**. Reproducible fictional data fixtures, safety/regression tests, documented limitations and demo outcomes; distinguish development-tuned from untouched holdout evaluation.
-5. **Deployment is NOT currently approved.** Requires verified data sources and domain review before anything could be interpreted as live public hazard information.
+1. **Next — Resident reporting and map UX refinement.** Make fictional report creation clearer, validate inputs inline, make upload outcomes and loading/error/empty states understandable, and improve small-screen and keyboard accessibility. Preserve limited local-demo write access, image safeguards and explicit disclaimers.
+2. **Next — Operator incident-management workflow refinement.** Improve finding, filtering and understanding existing report/incident queues; make manual linking, review justifications, state transitions and audit consequences clear. AI suggestions must never trigger decisions automatically; no road status mutations.
+3. **Next — Evidence/privacy experience refinement.** Make private-vs-public demo image state, human approval requirements and actionable metadata inconsistencies clear without exposing images or private descriptions through summary APIs. No automatic publication, revocation or deletion.
+4. **Next — Dashboard consolidation and performance.** Organize existing oversight, research, map diagnostics and operator tools into clear sections or progressive disclosure instead of more standalone panels. Optimize repeated GeoJSON reads and expensive display work only where profiling demonstrates a need. Preserve existing checks and provenance caveats.
+5. **Next — Regression, accessibility and reliability fixes.** Strengthen tests for complete fictional report → operator review → incident grouping → audit paths and protect original SQLite, local GeoJSON and private `.env`. Focus on actionable bugs and UI feedback rather than expanding academic benchmarking.
+
+## Deferred, not active milestones
+
+- **Human-reviewed road association persistence:** Consider only after the current workflows are refined and reviewed with the user. Any new tables or migrations require an explicit, backup-first separate approval. No automatic geographic road associations or closures.
+- **Production authentication and deployment:** Future separate security/privacy review. Current local operator password does not provide production identity or role security. No public operational hazard system is approved.
+
+**Removed from the planned version sequence:** the previously proposed V2.12 extended geographic source/topology work and V2.14 expanded academic evaluation work. Existing geographic safeguards and automated regression tests remain maintained; we are dropping those *expansion milestones*, not their protections.
+
+**Release policy:** Feature work goes into isolated PRs and combined local test branches, with successful CI and explicit user acceptance before original PR merges. Avoid new database schemas, seeding/reset and external geographic imports without permission.
 
 ## Team workflow and local protection rules
 
