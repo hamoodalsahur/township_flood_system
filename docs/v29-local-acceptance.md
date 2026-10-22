@@ -7,7 +7,7 @@ This checklist is intended for the V2.9 **temporary combined branch**, not a pro
 1. Stop `npm run dev` and other SQLite writers. Use a terminal **at the repository root** with `package.json` and `.git`.
 2. Back up the user's existing locally modified `public/data/bbr-roads.geojson`, `prisma/dev.db` and any `dev.db-wal`, `dev.db-shm`, `dev.db-journal` (if present), plus private `.env`/`.env.local`. Keep backups **outside** the repository.
 3. Inspect `git status`, preserve all tracked/untracked work in a uniquely labelled stash if a branch change is necessary, and verify clean status before switching. Do not `stash pop` onto a different branch.
-4. Fetch and switch to `integration/pr56-57-59-local-test-20261022` when this testing branch is actually published, then restore the original local GeoJSON **only** from the backup. This restores the user's imported local reference data, not a verified map dataset.
+4. Fetch and switch to `integration/pr56-57-local-test-20261022` when this testing branch is actually published, then restore the original local GeoJSON **only** from the backup. This restores the user's imported local reference data, not a verified map dataset.
 5. Run `npm install`, `npm run db:generate`, `npm test`, `npm run typecheck`, `npm run build`, `npm run dev`. No schema changes are included.
 
 **Forbidden on existing user data:** database seeding/reset, destructive `db:push`/migration, geo imports, force-checkout, `git reset --hard` or `git clean -fd`.
