@@ -5,6 +5,7 @@ import { LockKeyhole, LogOut } from "lucide-react";
 import DemoController from "@/components/scenarios/DemoController";
 import ReportWorkspace from "@/components/reports/ReportWorkspace";
 import AuditPanel from "@/components/audit/AuditPanel";
+import OperatorAuditSummary from "@/components/management/OperatorAuditSummary";
 import MapWorkspace from "@/components/maps/MapWorkspace";
 import GeographicReferenceWorkspace from "@/components/maps/GeographicReferenceWorkspace";
 import ConnectivityPanel from "@/components/network/ConnectivityPanel";
@@ -104,6 +105,7 @@ export default function ManagementControls() {
         <IncidentManager operatorKey={operatorKey} />
         <V2HazardManager operatorKey={operatorKey} />
         <ReportWorkspace view="management" operatorKey={operatorKey} />
+        <OperatorAuditSummary operatorKey={operatorKey} />
         <AuditPanel operatorKey={operatorKey} />
       </section>
     </>
