@@ -14,6 +14,7 @@ import IncidentManager from "@/components/management/IncidentManager";
 import IncidentOversight from "@/components/management/IncidentOversight";
 import ReviewAgeQueue from "@/components/management/ReviewAgeQueue";
 import EvidenceInventory from "@/components/management/EvidenceInventory";
+import EvidenceConsistency from "@/components/management/EvidenceConsistency";
 import DemoDataQuality from "@/components/management/DemoDataQuality";
 import ResearchExport from "@/components/management/ResearchExport";
 import RoadTopologyQuality from "@/components/management/RoadTopologyQuality";
@@ -95,6 +96,7 @@ export default function ManagementControls() {
         <IncidentOversight operatorKey={operatorKey} />
         <ReviewAgeQueue operatorKey={operatorKey} />
         <EvidenceInventory operatorKey={operatorKey} />
+        <EvidenceConsistency operatorKey={operatorKey} />
         <DemoDataQuality operatorKey={operatorKey} />
         <ResearchExport operatorKey={operatorKey} />
         <RoadTopologyQuality operatorKey={operatorKey} />

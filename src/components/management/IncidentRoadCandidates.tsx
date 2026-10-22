@@ -1,6 +1,6 @@
 "use client";
 import {useState} from "react";
-type Candidate={id:string;name:string;highway:string;sourceUrl:string;distanceMetres:number;verification:string;sourceReview:{oneway:string|null;access:string|null;motorVehicle:string|null;bridge:string|null;tunnel:string|null;layer:string|null;originalNodeIdsPresent:boolean;reviewNotes:string[]}};
+type Candidate={id:string;name:string;highway:string;sourceUrl:string;distanceMetres:number;verification:string;sourceReview:{oneway:string|null;access:string|null;motorVehicle:string|null;bridge:string|null;tunnel:string|null;layer:string|null;originalNodeIdsPresent:boolean;reviewNotes:string[]};observationSummary:{eligibleReportLocations:number;nearbyReportLocations:number;approximateClosestMetres:number|null;approximateFarthestNearbyMetres:number|null;duplicateOsmWayId:boolean;disclaimer:string}};
 type Result={candidates:Candidate[];reportLocations:number;roadFeaturesScanned:number;disclaimer:string};
 export default function IncidentRoadCandidates({id,operatorKey}:{id:string;operatorKey:string}){
  const [data,setData]=useState<Result|null>(null),[error,setError]=useState(""),[busy,setBusy]=useState(false);
@@ -26,6 +26,13 @@ export default function IncidentRoadCandidates({id,operatorKey}:{id:string;opera
    <ul className="space-y-2">{data.candidates.map(road=><li key={road.id} className="rounded-lg border border-amber-200 bg-white p-2 text-xs">
     <strong>{road.name}</strong> · {road.highway.replaceAll("_"," ")} · approximately {road.distanceMetres} m from a report
     <p className="mt-1"><a href={road.sourceUrl} target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-800 underline">View original OSM way</a> · {road.id} · unverified geometry</p>
+    <div className="mt-2 rounded border border-amber-300 bg-amber-50 p-2">
+      <p className="font-semibold">Nearby fictional location observations (not independent corroboration)</p>
+      <p className="mt-1">{road.observationSummary.nearbyReportLocations} of {road.observationSummary.eligibleReportLocations} eligible fictional report locations within approximately 150 m of this unverified OSM line.</p>
+      {road.observationSummary.approximateClosestMetres!==null?<p className="mt-1">Approximate observed distance range: {road.observationSummary.approximateClosestMetres}–{road.observationSummary.approximateFarthestNearbyMetres} m</p>:null}
+      {road.observationSummary.duplicateOsmWayId?<p className="mt-1 font-semibold text-rose-800">Duplicate OSM way ID detected; observations suppressed pending source review.</p>:null}
+      <p className="mt-1 text-amber-950">{road.observationSummary.disclaimer}</p>
+    </div>
     <div className="mt-2 rounded border border-amber-200 bg-amber-50 p-2">
       <p className="font-semibold">Unverified source-tag review · no road impact decision</p>
       <p className="mt-1">Original OSM nodes: {road.sourceReview.originalNodeIdsPresent?"present (still unverified)":"not preserved / unknown"}</p>
