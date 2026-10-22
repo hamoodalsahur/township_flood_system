@@ -3,9 +3,11 @@ import { useEffect, useRef, useState } from "react";
 import {filterReviewReports,reportReviewCounts} from "@/lib/v212-report-review-list";
 import { CATEGORY_LABELS, type HazardCategory } from "@/lib/demo-hazards";
 import { relatedReports } from "@/lib/v2-related-reports";
+import {describePrivatePhotoState,type PrivatePhotoState} from "@/lib/v214-evidence-state";
 type RecordItem={id:string;category:string;description:string;impact:string;reviewState:string;createdAt:string;latitude:number;longitude:number};
 export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
   const [items,setItems]=useState<RecordItem[]>([]);
+  const [photoStates,setPhotoStates]=useState<Record<string,PrivatePhotoState>|null>(null);
   const [selectedReportId,setSelectedReportId]=useState<string|null>(null);
   const [query,setQuery]=useState("");
   const [stateFilter,setStateFilter]=useState("all");
@@ -61,7 +63,14 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
   async function reload() {
     setLoading(true);
     try {
-      const r=await fetch("/api/v2/hazards",{cache:"no-store"});
+      const [r,photoResponse]=await Promise.all([
+        fetch("/api/v2/hazards",{cache:"no-store"}),
+        fetch("/api/v2/evidence-states",{headers:{"x-demo-operator-key":operatorKey},cache:"no-store"})
+      ]);
+      if(photoResponse.ok){
+        const data=await photoResponse.json() as {states:Record<string,PrivatePhotoState>};
+        setPhotoStates(data.states);
+      }else setPhotoStates(null);
       if(!r.ok) throw Error("Could not load fictional reports. Verify your existing local SQLite connection; do not reset your database.");
       const data=await r.json() as {reports:RecordItem[]};
       setItems(data.reports);
@@ -69,7 +78,7 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
     } catch(e){ setMessage(e instanceof Error?e.message:"Unable to load demo reports"); }
     finally{setLoading(false);}
   }
-  useEffect(()=>{void reload();},[]);
+  useEffect(()=>{void reload();},[operatorKey]);
   // Release private browser object URLs when leaving report review. Never store images on other pages.
   useEffect(()=>()=>{Object.values(evidenceUrlsRef.current).forEach(url=>URL.revokeObjectURL(url));},[]);
   async function review(id:string,decision:"corroborated"|"rejected") {
@@ -77,11 +86,12 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
     try {
       const response=await fetch(`/api/v2/hazards/${id}/review`,{
         method:"PATCH",headers:{"Content-Type":"application/json","x-demo-operator-key":operatorKey},
-        body:JSON.stringify({decision,note:notes[id]??"",publishPhoto:decision==="corroborated"&&publishPhotos[id]===true})
+        body:JSON.stringify({decision,note:notes[id]??"",publishPhoto:decision==="corroborated"&&photoStates?.[id]==="private_unreviewed"&&publishPhotos[id]===true})
       });
       const result=await response.json() as {error?:string};
       if(!response.ok)throw Error(result.error??"Review failed");
-      setMessage("Fictional incident report reviewed. No official road status changed.");
+      setPublishPhotos(old=>({...old,[id]:false}));
+      setMessage("Fictional report reviewed. Sample photo kept private unless separately approved. No official road status changed.");
       window.dispatchEvent(new Event("township-hazards-updated"));
       await reload();
     }catch(e){setMessage(e instanceof Error?e.message:"Could not review");}
@@ -140,11 +150,16 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
             <span className="block truncate text-xs text-slate-500">{item.description}</span>
           </span>
           <span className="whitespace-nowrap text-xs text-slate-500">{new Date(item.createdAt).toLocaleDateString()}</span>
+          <span className="hidden whitespace-nowrap text-[11px] font-medium text-slate-500 lg:inline">{photoStates===null?"Photo status unavailable":describePrivatePhotoState(photoStates[item.id]??"none").label}</span>
           <span className={"rounded-full px-2 py-1 text-[11px] font-bold uppercase "+(item.reviewState==="unverified"?"bg-amber-50 text-amber-900":"bg-teal-50 text-teal-900")}>{item.reviewState} · DEMO</span>
           <span className="min-w-12 text-right text-xs font-semibold text-teal-800">{selectedReportId===item.id?"Hide ▲":"View ▼"}</span>
         </button>
         {selectedReportId===item.id?<div id={"report-details-"+item.id} className="border-t border-teal-100 bg-white px-4 py-4 sm:px-5">
         <p className="text-sm leading-6 text-slate-700">{item.description}</p>
+        <div className="mt-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
+          <p className="font-semibold">Sample photo: {photoStates===null?"Status unavailable":describePrivatePhotoState(photoStates[item.id]??"none").label}</p>
+          <p className="mt-1">{photoStates===null?"The private metadata check could not be completed. Photo-publication choices are disabled until refreshed.":describePrivatePhotoState(photoStates[item.id]??"none").explanation}</p>
+        </div>
         {item.reviewState==="unverified" ? <p className="mt-2 rounded-lg bg-indigo-50 p-3 text-xs text-indigo-900">Rule-based triage (not AI): {relatedReports(item,items).priority.replaceAll("_"," ")}. Possible related report IDs: {relatedReports(item,items).ids.join(", ")||"none"}. Operator review required.</p> : null}
         {item.reviewState==="unverified"?<div className="mt-2 rounded-lg border border-violet-200 bg-violet-50 p-3 text-xs text-violet-950">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -171,7 +186,7 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
           <label className="block text-xs font-semibold">Review reason
             <input value={notes[item.id]??""} onChange={e=>setNotes(old=>({...old,[item.id]:e.target.value}))} maxLength={400} className="mt-1 block w-full rounded-lg border border-slate-300 p-2" placeholder="At least 8 characters" />
           </label>
-          <label className="flex items-start gap-2 text-xs text-slate-700"><input type="checkbox" checked={publishPhotos[item.id]===true} onChange={e=>setPublishPhotos(prev=>({...prev,[item.id]:e.target.checked}))} /> Separately approve the attached sample photo for public demonstration (only if no identifiable people or private details). Otherwise keep it private.</label>
+          <label className="flex items-start gap-2 text-xs text-slate-700"><input type="checkbox" checked={photoStates?.[item.id]==="private_unreviewed"&&publishPhotos[item.id]===true} disabled={photoStates?.[item.id]!=="private_unreviewed"} onChange={e=>setPublishPhotos(prev=>({...prev,[item.id]:e.target.checked}))} /> Separately approve the attached sample photo for public demonstration (only if no identifiable people or private details). Otherwise keep it private.</label>
           <div className="flex gap-2">
             <button type="button" disabled={busy||(notes[item.id]??"").trim().length<8} onClick={()=>void review(item.id,"corroborated")} className="rounded-lg bg-teal-800 px-3 py-2 text-xs font-bold text-white disabled:opacity-40">Corroborate report</button>
             <button type="button" disabled={busy||(notes[item.id]??"").trim().length<8} onClick={()=>void review(item.id,"rejected")} className="rounded-lg border border-slate-300 px-3 py-2 text-xs disabled:opacity-40">Reject report</button>
