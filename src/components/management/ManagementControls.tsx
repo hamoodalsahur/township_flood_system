@@ -15,6 +15,7 @@ import EvidenceInventory from "@/components/management/EvidenceInventory";
 import DemoDataQuality from "@/components/management/DemoDataQuality";
 import ResearchExport from "@/components/management/ResearchExport";
 import RoadTopologyQuality from "@/components/management/RoadTopologyQuality";
+import GeoSourceManifest from "@/components/management/GeoSourceManifest";
 import RoadAccessTags from "@/components/management/RoadAccessTags";
 import AiEvaluationWorkbench from "@/components/management/AiEvaluationWorkbench";
 
@@ -94,6 +95,7 @@ export default function ManagementControls() {
         <DemoDataQuality operatorKey={operatorKey} />
         <ResearchExport operatorKey={operatorKey} />
         <RoadTopologyQuality operatorKey={operatorKey} />
+        <GeoSourceManifest operatorKey={operatorKey} />
         <RoadAccessTags operatorKey={operatorKey} />
         <IncidentManager operatorKey={operatorKey} />
         <V2HazardManager operatorKey={operatorKey} />
