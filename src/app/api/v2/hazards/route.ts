@@ -1,3 +1,4 @@
+import {mayAcceptDemoSubmission,checkDemoJsonSize} from "@/lib/v2-demo-write-guard";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { validateHazardSubmission } from "@/lib/v2-hazard-validation";
@@ -13,6 +14,8 @@ export async function GET() {
   }
 }
 export async function POST(request:Request) {
+  if(!mayAcceptDemoSubmission(process.env.NODE_ENV))return NextResponse.json({error:"Public demo submissions are disabled outside local development"},{status:403});
+  if(!checkDemoJsonSize(request,8192))return NextResponse.json({error:"Demo report payload is too large"},{status:413});
   try {
     const body: unknown = await request.json();
     const data=validateHazardSubmission(body);
