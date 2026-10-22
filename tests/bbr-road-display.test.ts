@@ -27,3 +27,12 @@ test("all unverified OSM categories use distinguishable blue hues, not road safe
  assert.deepEqual([m.color,l.color,s.color,o.color],["#2563eb","#60a5fa","#93c5fd","#bfdbfe"]);
  assert.ok(m.weight>l.weight&&l.weight>s.weight);
 });
+
+test("blue major lines are lighter and slimmer at default viewing scale while minor lines are untouched",()=>{
+ const major=roadStyle("primary");
+ assert.equal(major.color,"#2563eb");
+ assert.equal(major.weight,3.8);
+ assert.equal(major.opacity,0.58);
+ assert.deepEqual(roadStyle("residential"),{color:"#60a5fa",weight:3.5,opacity:0.85});
+ assert.deepEqual(roadStyle("service"),{color:"#93c5fd",weight:2.4,opacity:0.8});
+});
