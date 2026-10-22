@@ -1,8 +1,11 @@
+import {mayAcceptDemoSubmission,checkDemoJsonSize} from "@/lib/v2-demo-write-guard";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { validateDemoImage } from "@/lib/v2-evidence-validation";
 export const dynamic="force-dynamic";
 export async function POST(request:Request, context:{params:Promise<{id:string}>}) {
+  if(!mayAcceptDemoSubmission(process.env.NODE_ENV))return NextResponse.json({error:"Public demo photo upload disabled outside local development"},{status:403});
+  if(!checkDemoJsonSize(request,320000))return NextResponse.json({error:"Demo image payload is too large"},{status:413});
   try {
     const {id}=await context.params;
     const body:unknown=await request.json();

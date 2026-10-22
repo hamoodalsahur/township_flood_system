@@ -1,5 +1,6 @@
 "use client";
 import {useEffect,useState} from "react";
+import IncidentRoadCandidates from "@/components/management/IncidentRoadCandidates";
 type Report={id:string;category:string;description:string;reviewState:string;createdAt:string};
 type Incident={id:string;title:string;category:string;status:string;reviewNote:string;possibleRoad:string|null;createdAt:string;reports:{reportId:string;linkedAt:string;report:{category:string;description:string;reviewState:string}}[]};
 export default function IncidentManager({operatorKey}:{operatorKey:string}){
@@ -96,6 +97,7 @@ export default function IncidentManager({operatorKey}:{operatorKey:string}){
      <label className="block text-xs">Possible road affected (fictional, free-text, no closure)<input maxLength={120} value={roads[incident.id]??incident.possibleRoad??""} onChange={e=>setRoads(p=>({...p,[incident.id]:e.target.value}))} placeholder="e.g. Demo access road" className="mt-1 w-full rounded-lg border p-2"/></label>
      <button className="rounded-lg bg-teal-800 px-3 py-2 text-xs font-bold text-white disabled:opacity-40" disabled={busy||(notes[incident.id]??"").trim().length<8} onClick={()=>void request("/api/v2/incidents/"+incident.id,"PATCH",{status:statuses[incident.id]??incident.status,note:notes[incident.id],possibleRoad:roads[incident.id]??incident.possibleRoad??""})}>Save incident decision</button>
     </div>:<p className="mt-2 text-xs text-slate-600">Resolved groups are read-only. This does not establish the road is safe.</p>}
+    <IncidentRoadCandidates id={incident.id} operatorKey={operatorKey} />
     <p className="mt-2 text-xs text-slate-500">Possible fictional road reference: {incident.possibleRoad||"Not assessed"} · Last operator reasoning: {incident.reviewNote}</p>
    </article>)}
   </div>
