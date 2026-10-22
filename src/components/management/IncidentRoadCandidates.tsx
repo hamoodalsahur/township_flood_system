@@ -1,6 +1,6 @@
 "use client";
 import {useState} from "react";
-type Candidate={id:string;name:string;highway:string;sourceUrl:string;distanceMetres:number;verification:string};
+type Candidate={id:string;name:string;highway:string;sourceUrl:string;distanceMetres:number;verification:string;sourceReview:{oneway:string|null;access:string|null;motorVehicle:string|null;bridge:string|null;tunnel:string|null;layer:string|null;originalNodeIdsPresent:boolean;reviewNotes:string[]}};
 type Result={candidates:Candidate[];reportLocations:number;roadFeaturesScanned:number;disclaimer:string};
 export default function IncidentRoadCandidates({id,operatorKey}:{id:string;operatorKey:string}){
  const [data,setData]=useState<Result|null>(null),[error,setError]=useState(""),[busy,setBusy]=useState(false);
@@ -26,6 +26,18 @@ export default function IncidentRoadCandidates({id,operatorKey}:{id:string;opera
    <ul className="space-y-2">{data.candidates.map(road=><li key={road.id} className="rounded-lg border border-amber-200 bg-white p-2 text-xs">
     <strong>{road.name}</strong> · {road.highway.replaceAll("_"," ")} · approximately {road.distanceMetres} m from a report
     <p className="mt-1"><a href={road.sourceUrl} target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-800 underline">View original OSM way</a> · {road.id} · unverified geometry</p>
+    <div className="mt-2 rounded border border-amber-200 bg-amber-50 p-2">
+      <p className="font-semibold">Unverified source-tag review · no road impact decision</p>
+      <p className="mt-1">Original OSM nodes: {road.sourceReview.originalNodeIdsPresent?"present (still unverified)":"not preserved / unknown"}</p>
+      <p className="mt-1">Raw OSM tags (absence means unknown):
+        {([
+          ["oneway",road.sourceReview.oneway],["access",road.sourceReview.access],
+          ["motor_vehicle",road.sourceReview.motorVehicle],["bridge",road.sourceReview.bridge],
+          ["tunnel",road.sourceReview.tunnel],["layer",road.sourceReview.layer]
+        ] as const).filter(([,value])=>value!==null).map(([label,value])=><span key={label} className="ml-2 inline-block">{label}={value}</span>)}
+      </p>
+      <ul className="mt-1 list-disc space-y-0.5 pl-4">{road.sourceReview.reviewNotes.map(note=><li key={note}>{note}</li>)}</ul>
+    </div>
    </li>)}</ul>
    <p className="text-xs leading-5 text-amber-950">{data.disclaimer}</p>
   </div>:null}
