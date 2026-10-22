@@ -12,8 +12,7 @@ export async function GET(request:Request){
  try{await prisma.hazardReport.count();databaseAccessible=true;}catch{}
  try{
   const roads:unknown=JSON.parse(await readFile(path.join(process.cwd(),"public","data","bbr-roads.geojson"),"utf8"));
-  roadFilePresent=validRoadCollection(roads);
-  if(roadFilePresent)roadFeatures=roads.features.length;
+  if(validRoadCollection(roads)){roadFilePresent=true;roadFeatures=roads.features.length;}
  }catch{}
  const checks=inspectDemoReadiness({environment:process.env.NODE_ENV,databaseUrl:process.env.DATABASE_URL,operatorKey:process.env.DEMO_OPERATOR_KEY,provider:process.env.AI_PROVIDER,embedModel:process.env.OLLAMA_EMBED_MODEL,roadFilePresent,roadFeatures,databaseAccessible});
  return NextResponse.json({checks,passed:checks.filter(c=>c.passed).length,total:checks.length,
