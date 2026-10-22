@@ -8,6 +8,7 @@ import { MapPinned, ExternalLink } from "lucide-react";
 import { bbrReferencePoints } from "@/lib/bbr-reference";
 import { reviewSmallGroups } from "@/lib/bbr-small-groups";
 import { roadReviewFlags } from "@/lib/bbr-road-review-flags";
+import {reviewedDemoVicinityStrokes,DEMO_IMPACT_LEGEND,type ReviewedDemoReport} from "@/lib/v215-road-vicinity";
 import { inspectOsmNodeTopology } from "@/lib/bbr-osm-topology";
 import { CATEGORY_LABELS, DEMO_HAZARDS, HAZARD_CATEGORIES, filterDemoHazards, type HazardCategory } from "@/lib/demo-hazards";
 import { HAZARD_SYMBOLS } from "@/lib/hazard-symbols";
@@ -50,12 +51,18 @@ export default function GeographicReferenceWorkspace() {
   const [reportPhase,setReportPhase] = useState<"idle"|"saving"|"attaching">("idle");
   const hints=inspectDemoReportDraft(reportDescription,draftPosition,evidenceFile);
   const [photoApprovedIds, setPhotoApprovedIds] = useState<string[]>([]);
+  const [reviewedReports,setReviewedReports]=useState<ReviewedDemoReport[]>([]);
+  const [showVicinityStrokes,setShowVicinityStrokes]=useState(true);
   async function loadStoredHazards() {
     try {
       const response=await fetch("/api/v2/hazards",{cache:"no-store"});
       if(!response.ok) throw Error("Fictional report feed unavailable; check the existing local connection without resetting your database.");
       const payload=await response.json() as {reports:{id:string;category:HazardCategory;description:string;longitude:number;latitude:number;impact:string;reviewState:string;createdAt:string;hasApprovedPhoto:boolean}[]};
       setPhotoApprovedIds(payload.reports.filter(item=>item.hasApprovedPhoto).map(item=>item.id));
+      setReviewedReports(payload.reports.map(item=>({
+        id:item.id,longitude:item.longitude,latitude:item.latitude,impact:item.impact as ReviewedDemoReport["impact"],
+        reviewState:item.reviewState
+      })));
       setStoredHazards(payload.reports.map(item=>({
         id:item.id,category:item.category,title:CATEGORY_LABELS[item.category]+" (submitted demo)",
         description:item.description,coordinates:[item.longitude,item.latitude],
@@ -140,6 +147,7 @@ export default function GeographicReferenceWorkspace() {
     const ids = new Set(activeGroup.ways.map(road => road.id));
     return byCategory.filter(road => ids.has(road.properties.id));
   }, [roads, filter, activeGroup]);
+  const vicinityStrokes=useMemo(()=>reviewedDemoVicinityStrokes(roads,reviewedReports),[roads,reviewedReports]);
   const selectedRoad = roads.find(road => road.properties.id === selectedRoadId) ?? null;
   const reviewFlags = selectedRoad ? roadReviewFlags(selectedRoad) : [];
   const counts = useMemo(() => ({
@@ -174,6 +182,26 @@ export default function GeographicReferenceWorkspace() {
           </select>
         </label>
         <p className="text-sm text-slate-600">{visibleRoads.length} lines displayed · {roads.length} imported</p>
+      </div>
+      <div className="mt-3 rounded-xl border border-blue-200 bg-blue-50/60 p-3" aria-label="Demonstration road colour legend">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm font-bold text-blue-950">Blue road hierarchy · unverified OSM reference</p>
+          <label className="flex items-center gap-2 text-xs font-semibold text-slate-700">
+            <input type="checkbox" checked={showVicinityStrokes} onChange={event=>setShowVicinityStrokes(event.target.checked)}/>
+            Show human-reviewed fictional report vicinity colors
+          </label>
+        </div>
+        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-2 text-xs text-blue-950">
+          {[["#2563eb","Main roads"],["#60a5fa","Local streets"],["#93c5fd","Service"],["#bfdbfe","Other"]].map(([color,label])=>
+            <span key={label} className="inline-flex items-center gap-2"><span aria-hidden="true" style={{background:color}} className="inline-block h-1.5 w-7 rounded-full"/>{label}</span>
+          )}
+        </div>
+        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-2 text-xs text-amber-950">
+          {DEMO_IMPACT_LEGEND.map(item=><span key={item.impact} className="inline-flex items-center gap-2">
+            <span aria-hidden="true" style={{background:item.color}} className="inline-block h-1.5 w-7 rounded-full"/>{item.label}
+          </span>)}
+        </div>
+        <p className="mt-2 text-xs leading-5 text-slate-700">Colored dashed sections indicate approximate vicinity of corroborated <strong>fictional</strong> reports, not road closures or traffic status. Pending/rejected reports never recolor roads. Ambiguous nearby road matches are deliberately excluded. {vicinityStrokes.length} example vicinity overlay(s) identified.</p>
       </div>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-orange-200 bg-orange-50/60 p-3">
         <div>
@@ -237,7 +265,7 @@ export default function GeographicReferenceWorkspace() {
       </details>
       {hazardError?<p role="status" className="mt-2 text-xs text-amber-900">{hazardError}</p>:null}
       <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
-        <GeographicReferenceMap roads={visibleRoads} selectedRoadId={selectedRoadId} onSelectRoad={id => { setSelectedRoadId(id); setSelectedHazardId(null); }} focusGroup={groupNumber} selectedNodePosition={selectedNodePosition} hazards={visibleHazards} approvedPhotoIds={photoApprovedIds} onSelectHazard={id => { setSelectedHazardId(id); setSelectedRoadId(null); }} selectedHazardId={selectedHazardId} selectedLocation={draftPosition} onChooseLocation={position=>{setDraftPosition(position);setReportMessage("");}} />
+        <GeographicReferenceMap roads={visibleRoads} vicinityStrokes={showVicinityStrokes?vicinityStrokes.filter(s=>visibleRoads.some(road=>road.properties.id===s.wayId)):[]} selectedRoadId={selectedRoadId} onSelectRoad={id => { setSelectedRoadId(id); setSelectedHazardId(null); }} focusGroup={groupNumber} selectedNodePosition={selectedNodePosition} hazards={visibleHazards} approvedPhotoIds={photoApprovedIds} onSelectHazard={id => { setSelectedHazardId(id); setSelectedRoadId(null); }} selectedHazardId={selectedHazardId} selectedLocation={draftPosition} onChooseLocation={position=>{setDraftPosition(position);setReportMessage("");}} />
         <aside className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 text-sm" aria-live="polite">
           {activeGroup ? <p className="mb-3 rounded-lg bg-amber-50 p-2 text-xs font-medium text-amber-900">Group {activeGroup.groupNumber}: {activeGroup.roadLineCount} mapped lines. Grouping is geometric only, not proof of disconnected roads.</p> : null}
           {selectedHazard ? (
@@ -257,6 +285,7 @@ export default function GeographicReferenceWorkspace() {
               <p className="break-words font-semibold">{selectedRoad.properties.name}</p>
               <p>OSM type: <span className="font-medium">{selectedRoad.properties.highway.replaceAll("_", " ")}</span></p>
               <p>Category: {roadCategory(selectedRoad.properties.highway)}</p>
+              <p className="text-xs text-amber-900">Blue means OSM road type only; dashed orange/red nearby sections are fictional report-vicinity indicators and do not establish that this road is blocked.</p>
               {reviewFlags.length > 0 ? (
                 <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
                   <h4 className="font-semibold text-amber-950">Mapped tags to review</h4>
