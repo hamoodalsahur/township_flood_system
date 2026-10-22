@@ -1,6 +1,6 @@
 "use client";
 
-import { useMapEvents, MapContainer, TileLayer, CircleMarker, Tooltip, ZoomControl, Polyline, useMap, Marker } from "react-leaflet";
+import { useMapEvents, MapContainer, TileLayer, CircleMarker, Tooltip, ZoomControl, Polyline, useMap, Marker, Popup } from "react-leaflet";
 import { divIcon } from "leaflet";
 import { HAZARD_SYMBOLS } from "@/lib/hazard-symbols";
 import { useEffect } from "react";
@@ -53,6 +53,7 @@ export default function GeographicReferenceMap({
   focusGroup = 0,
   selectedNodePosition = null,
   hazards = [],
+  approvedPhotoIds = [],
   onSelectHazard = () => {},
   selectedHazardId = null,
   onChooseLocation,
@@ -64,6 +65,7 @@ export default function GeographicReferenceMap({
   focusGroup?: number;
   selectedNodePosition?: [number, number] | null;
   hazards?: DemoHazard[];
+  approvedPhotoIds?: readonly string[];
   onSelectHazard?: (id: string) => void;
   selectedHazardId?: string | null;
   onChooseLocation?: (coordinates:[number,number])=>void;
@@ -110,6 +112,22 @@ export default function GeographicReferenceMap({
             keyboard
             title={`Fictional ${HAZARD_SYMBOLS[hazard.category].label} report. Click for details.`}>
             <Tooltip direction="top" offset={[0, -32]}>DEMO · {HAZARD_SYMBOLS[hazard.category].label} · {hazard.title}</Tooltip>
+            <Popup maxWidth={280} minWidth={200} autoPan>
+              <div className="space-y-2 text-sm">
+                <p className="text-xs font-bold uppercase text-amber-900">Fictional report · unverified</p>
+                <p className="font-semibold">{hazard.title}</p>
+                <p className="text-slate-700">{hazard.description}</p>
+                {approvedPhotoIds.includes(hazard.id) ? (
+                  <figure className="rounded-lg border border-teal-200 p-2">
+                    <img src={`/api/v2/hazards/${encodeURIComponent(hazard.id)}/evidence/approved`}
+                      alt={`Approved fictional sample for ${HAZARD_SYMBOLS[hazard.category].label}`}
+                      loading="eager" className="max-h-48 w-full rounded-md object-contain" />
+                    <figcaption className="mt-1 text-xs text-teal-900">Operator-approved sample image · not verified road evidence</figcaption>
+                  </figure>
+                ) : <p className="text-xs text-slate-600">No public-demo-approved photo available.</p>}
+                <p className="text-xs font-medium text-slate-600">Illustrative position only. No live obstruction or closure is confirmed.</p>
+              </div>
+            </Popup>
           </Marker>
         ))}
         {features.map(feature => {

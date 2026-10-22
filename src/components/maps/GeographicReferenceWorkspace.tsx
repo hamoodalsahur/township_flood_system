@@ -237,7 +237,7 @@ export default function GeographicReferenceWorkspace() {
       </details>
       {hazardError?<p role="status" className="mt-2 text-xs text-amber-900">{hazardError}</p>:null}
       <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
-        <GeographicReferenceMap roads={visibleRoads} selectedRoadId={selectedRoadId} onSelectRoad={id => { setSelectedRoadId(id); setSelectedHazardId(null); }} focusGroup={groupNumber} selectedNodePosition={selectedNodePosition} hazards={visibleHazards} onSelectHazard={id => { setSelectedHazardId(id); setSelectedRoadId(null); }} selectedHazardId={selectedHazardId} selectedLocation={draftPosition} onChooseLocation={position=>{setDraftPosition(position);setReportMessage("");}} />
+        <GeographicReferenceMap roads={visibleRoads} selectedRoadId={selectedRoadId} onSelectRoad={id => { setSelectedRoadId(id); setSelectedHazardId(null); }} focusGroup={groupNumber} selectedNodePosition={selectedNodePosition} hazards={visibleHazards} approvedPhotoIds={photoApprovedIds} onSelectHazard={id => { setSelectedHazardId(id); setSelectedRoadId(null); }} selectedHazardId={selectedHazardId} selectedLocation={draftPosition} onChooseLocation={position=>{setDraftPosition(position);setReportMessage("");}} />
         <aside className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 text-sm" aria-live="polite">
           {activeGroup ? <p className="mb-3 rounded-lg bg-amber-50 p-2 text-xs font-medium text-amber-900">Group {activeGroup.groupNumber}: {activeGroup.roadLineCount} mapped lines. Grouping is geometric only, not proof of disconnected roads.</p> : null}
           {selectedHazard ? (
