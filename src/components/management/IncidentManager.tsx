@@ -1,6 +1,7 @@
 "use client";
 import {useEffect,useState} from "react";
 import IncidentRoadCandidates from "@/components/management/IncidentRoadCandidates";
+import {filterIncidentGroups,incidentStatusCounts} from "@/lib/v212-incident-list";
 type Report={id:string;category:string;description:string;reviewState:string;createdAt:string};
 type Incident={id:string;title:string;category:string;status:string;reviewNote:string;possibleRoad:string|null;createdAt:string;reports:{reportId:string;linkedAt:string;report:{category:string;description:string;reviewState:string}}[]};
 export default function IncidentManager({operatorKey}:{operatorKey:string}){
@@ -9,6 +10,10 @@ export default function IncidentManager({operatorKey}:{operatorKey:string}){
  const [newReport,setNewReport]=useState("");const [title,setTitle]=useState("");const [reason,setReason]=useState("");
  const [notes,setNotes]=useState<Record<string,string>>({}),[roads,setRoads]=useState<Record<string,string>>({}),[statuses,setStatuses]=useState<Record<string,string>>({}),[links,setLinks]=useState<Record<string,string>>({});
  const [error,setError]=useState(""),[message,setMessage]=useState(""),[busy,setBusy]=useState(false);
+ const [query,setQuery]=useState("");
+ const [statusFilter,setStatusFilter]=useState("all");
+ const [categoryFilter,setCategoryFilter]=useState("all");
+ const [sort,setSort]=useState<"newest"|"oldest">("newest");
  const [suggestions,setSuggestions]=useState<Record<string,{provider:string;model:string;candidates:{id:string;description:string;similarity:number}[];disclaimer:string}>>({});
  const [suggestBusy,setSuggestBusy]=useState<string|null>(null);
  async function suggest(id:string){
@@ -30,6 +35,10 @@ export default function IncidentManager({operatorKey}:{operatorKey:string}){
  useEffect(()=>{void reload().catch(e=>setError(e instanceof Error?e.message:"Load failed"));},[operatorKey]);
  const assigned=new Set(incidents.flatMap(i=>i.reports.map(r=>r.reportId)));
  const available=reports.filter(r=>!assigned.has(r.id));
+ const counts=incidentStatusCounts(incidents);
+ const categories=[...new Set(incidents.map(i=>i.category))].sort();
+ const visible=filterIncidentGroups(incidents,{query,status:statusFilter,category:categoryFilter,sort});
+
  async function request(path:string,method:"POST"|"PATCH"|"DELETE",body:object){
   setBusy(true);setError("");setMessage("");
   try{
@@ -58,11 +67,46 @@ export default function IncidentManager({operatorKey}:{operatorKey:string}){
    <label className="mt-2 block text-xs">Operator reason<input maxLength={400} value={reason} onChange={e=>setReason(e.target.value)} placeholder="Why these report details belong together" className="mt-1 w-full rounded-lg border p-2"/></label>
    <button disabled={busy||!newReport||title.trim().length<8||reason.trim().length<8} onClick={()=>void request("/api/v2/incidents","POST",{reportId:newReport,title,note:reason})} className="mt-3 rounded-lg bg-teal-800 px-3 py-2 text-xs font-bold text-white disabled:opacity-40">Create incident group</button>
   </div>
+  <div className="mt-5 rounded-xl border border-slate-200 bg-white p-4" aria-label="Filter fictional incident groups">
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <h3 className="font-semibold text-slate-900">Find incident groups</h3>
+      <span className="text-xs font-medium text-slate-500">{visible.length} of {counts.total} fictional groups shown</span>
+    </div>
+    <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <label className="col-span-2 text-xs font-medium text-slate-700 lg:col-span-1">Search by title, ID or possible road
+        <input type="search" value={query} onChange={e=>setQuery(e.target.value)}
+          placeholder="Search fictional groups" className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"/>
+      </label>
+      <label className="text-xs font-medium text-slate-700">Review state
+        <select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
+          <option value="all">All statuses</option>
+          <option value="under_review">Under review ({counts.underReview})</option>
+          <option value="corroborated">Corroborated ({counts.corroborated})</option>
+          <option value="resolved">Resolved ({counts.resolved})</option>
+        </select>
+      </label>
+      <label className="text-xs font-medium text-slate-700">Category
+        <select value={categoryFilter} onChange={e=>setCategoryFilter(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
+          <option value="all">All categories</option>{categories.map(c=><option key={c} value={c}>{c.replaceAll("_"," ")}</option>)}
+        </select>
+      </label>
+      <label className="text-xs font-medium text-slate-700">Order
+        <select value={sort} onChange={e=>setSort(e.target.value as "newest"|"oldest")} className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
+          <option value="newest">Newest first</option><option value="oldest">Oldest first</option>
+        </select>
+      </label>
+    </div>
+    <button type="button" className="mt-3 text-xs font-semibold text-teal-800 underline underline-offset-2" onClick={()=>{setQuery("");setStatusFilter("all");setCategoryFilter("all");setSort("newest");}}>Clear filters</button>
+    <p className="mt-2 text-xs text-slate-500">Filtering changes this view only. It does not affect existing incident decisions, roads or audit entries.</p>
+  </div>
   <div className="mt-4 space-y-4">
+   {incidents.length>0&&visible.length===0?<p role="status" className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">No fictional incident groups match these filters. Clear filters to see the full list.</p>:null}
    {incidents.length===0?<p className="text-sm text-slate-500">No grouped incidents yet. Create one above using a fictional report.</p>:null}
-   {incidents.map(incident=><article key={incident.id} className="rounded-xl border border-slate-200 p-4">
+   {visible.map(incident=><article key={incident.id} className="rounded-xl border border-slate-200 p-4">
     <div className="flex flex-wrap justify-between gap-2"><h3 className="font-bold">{incident.title}</h3><span className="text-xs font-semibold uppercase text-teal-800">{incident.status.replaceAll("_"," ")} · DEMO</span></div>
     <p className="mt-1 text-xs text-slate-600">{incident.category.replaceAll("_"," ")} · {incident.reports.length} linked report(s) · {new Date(incident.createdAt).toLocaleString()}</p>
+    <details className="mt-3 rounded-lg border border-slate-200 bg-slate-50/70 p-3">
+     <summary className="cursor-pointer text-sm font-semibold text-teal-900">View linked reports and management actions</summary>
     <ul className="mt-2 space-y-2 text-xs text-slate-700">{incident.reports.map(link=><li key={link.reportId} className="flex flex-wrap items-center justify-between gap-2 border-b pb-2">
      <span>{link.report.description} <span className="text-slate-500">({link.report.reviewState})</span></span>
      {incident.status!=="resolved"&&incident.reports.length>1?<button type="button" disabled={busy||(notes[incident.id]??"").trim().length<8} onClick={()=>void request("/api/v2/incidents/"+incident.id,"DELETE",{reportId:link.reportId,note:notes[incident.id]})} className="rounded border border-rose-200 px-2 py-1 font-semibold text-rose-800 disabled:opacity-40">Unlink (reason required)</button>:null}
@@ -99,6 +143,7 @@ export default function IncidentManager({operatorKey}:{operatorKey:string}){
     </div>:<p className="mt-2 text-xs text-slate-600">Resolved groups are read-only. This does not establish the road is safe.</p>}
     <IncidentRoadCandidates id={incident.id} operatorKey={operatorKey} />
     <p className="mt-2 text-xs text-slate-500">Possible fictional road reference: {incident.possibleRoad||"Not assessed"} · Last operator reasoning: {incident.reviewNote}</p>
+    </details>
    </article>)}
   </div>
  </section>;

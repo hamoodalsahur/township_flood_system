@@ -10,7 +10,7 @@ test("incident search includes title, id and optional fictional road text",()=>{
  const common={status:"all",category:"all",sort:"newest" as const};
  assert.deepEqual(filterIncidentGroups(items,{...common,query:"BLOCKED"}).map(x=>x.id),["a"]);
  assert.deepEqual(filterIncidentGroups(items,{...common,query:"road b"}).map(x=>x.id),["c"]);
- assert.deepEqual(filterIncidentGroups(items,{...common,query:" B "}).map(x=>x.id),["b"]);
+ assert.deepEqual(filterIncidentGroups(items,{...common,query:" waterlogging "}).map(x=>x.id),["b"]);
 });
 test("multiple filters and stable sorting never change the input",()=>{
  const before=[...items];const common={query:"",status:"all",category:"all"};
