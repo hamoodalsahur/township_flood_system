@@ -152,6 +152,7 @@ model HazardReport {
   sourceMode  String   @default("simulation")
   createdAt   DateTime @default(now())
   evidence    HazardEvidence?
+  incidentLink IncidentReportLink?
 
   @@index([reviewState, createdAt])
   @@index([category, createdAt])
@@ -169,4 +170,34 @@ model HazardEvidence {
   status      String       @default("private_unreviewed") // private_unreviewed | approved_public_demo | private_rejected
   createdAt   DateTime     @default(now())
   @@map("hazard_evidence")
+}
+
+/** Operator-created grouping of fictional reports. Never an authoritative hazard or road closure. */
+model DemoIncident {
+  id            String   @id @default(cuid())
+  title         String
+  category      String
+  status        String   @default("under_review") // under_review | corroborated | resolved
+  reviewNote    String
+  possibleRoad  String?  // free-text illustrative road reference, never authoritative road ID
+  sourceMode    String   @default("simulation")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  reports       IncidentReportLink[]
+
+  @@index([status, createdAt])
+  @@map("demo_incidents")
+}
+
+/** A report can belong to at most one incident; links are explicit operator decisions. */
+model IncidentReportLink {
+  id         String       @id @default(cuid())
+  incidentId String
+  reportId   String       @unique
+  linkedAt   DateTime     @default(now())
+  incident   DemoIncident @relation(fields:[incidentId],references:[id],onDelete:Cascade)
+  report     HazardReport @relation(fields:[reportId],references:[id],onDelete:Restrict)
+
+  @@index([incidentId])
+  @@map("incident_report_links")
 }
