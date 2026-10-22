@@ -12,6 +12,8 @@ export default function IncidentManager({operatorKey}:{operatorKey:string}){
  const [newReport,setNewReport]=useState("");const [title,setTitle]=useState("");const [reason,setReason]=useState("");
  const [notes,setNotes]=useState<Record<string,string>>({}),[roads,setRoads]=useState<Record<string,string>>({}),[statuses,setStatuses]=useState<Record<string,string>>({}),[links,setLinks]=useState<Record<string,string>>({});
  const [error,setError]=useState(""),[message,setMessage]=useState(""),[busy,setBusy]=useState(false);
+ const [loading,setLoading]=useState(true);
+ const [loadError,setLoadError]=useState("");
  const [query,setQuery]=useState("");
  const [statusFilter,setStatusFilter]=useState("all");
  const [categoryFilter,setCategoryFilter]=useState("all");
@@ -29,13 +31,18 @@ export default function IncidentManager({operatorKey}:{operatorKey:string}){
   finally{setSuggestBusy(null);}
  }
  async function reload(){
+  setLoading(true);setLoadError("");
+  try{
   const [a,b]=await Promise.all([fetch("/api/v2/incidents",{headers:{"x-demo-operator-key":operatorKey},cache:"no-store"}),fetch("/api/v2/hazards",{cache:"no-store"})]);
   if(!a.ok||!b.ok)throw Error("Unable to load incident management records");
   const incidentsData=await a.json() as {incidents:Incident[]},reportsData=await b.json() as {reports:Report[]};
   setIncidents(incidentsData.incidents);setReports(reportsData.reports.filter(r=>r.reviewState!=="rejected"));
   setSelectedIncidentId(old=>incidentsData.incidents.some(i=>i.id===old)?old:null);
+  }catch(e){
+   setLoadError(e instanceof Error?e.message:"Unable to refresh fictional incident records");
+  }finally{setLoading(false);}
  }
- useEffect(()=>{void reload().catch(e=>setError(e instanceof Error?e.message:"Load failed"));},[operatorKey]);
+ useEffect(()=>{void reload();},[operatorKey]);
  const assigned=new Set(incidents.flatMap(i=>i.reports.map(r=>r.reportId)));
  const available=reports.filter(r=>!assigned.has(r.id));
  const counts=incidentStatusCounts(incidents);
@@ -105,9 +112,15 @@ export default function IncidentManager({operatorKey}:{operatorKey:string}){
   </div>
   <div className="mt-4 space-y-3">
    {incidents.length>0&&visible.length===0?<p role="status" className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">No fictional incident groups match these filters. Clear filters to see the full list.</p>:null}
-   {incidents.length===0?<p className="text-sm text-slate-500">No grouped incidents yet. Create one above using a fictional report.</p>:null}
+   {loading?<p role="status" className="rounded-xl border border-slate-200 p-4 text-sm text-slate-600">Loading fictional incident groups…</p>:null}
+   {loadError?<div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900">
+     <p>Incident groups could not be refreshed. Previously displayed information may be outdated.</p>
+     <p className="mt-1 text-xs">{loadError}</p>
+     <button type="button" onClick={()=>void reload()} disabled={loading} className="mt-3 rounded-lg border border-rose-300 bg-white px-3 py-2 text-xs font-semibold">Retry loading</button>
+   </div>:null}
+   {!loading&&!loadError&&incidents.length===0?<p className="text-sm text-slate-500">No grouped incidents yet. Create one above using a fictional report.</p>:null}
    <ul className="overflow-hidden rounded-xl border border-slate-200 bg-white divide-y divide-slate-100" aria-label="Fictional incident groups">
-   {visible.map(incident=><li key={incident.id} className={selectedIncidentId===incident.id?"bg-teal-50/40":"bg-white"}>
+   {!loadError&&visible.map(incident=><li key={incident.id} className={selectedIncidentId===incident.id?"bg-teal-50/40":"bg-white"}>
     <button type="button" onClick={()=>setSelectedIncidentId(id=>id===incident.id?null:incident.id)}
       aria-expanded={selectedIncidentId===incident.id} aria-controls={"incident-details-"+incident.id}
       className="flex w-full flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 text-left transition hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-700 sm:flex-nowrap">

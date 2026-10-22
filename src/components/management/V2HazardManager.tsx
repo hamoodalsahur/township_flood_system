@@ -20,6 +20,7 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
   const [categoryFilter,setCategoryFilter]=useState("all");
   const [order,setOrder]=useState<"needs_review_first"|"newest"|"oldest">("needs_review_first");
   const [loading,setLoading]=useState(true);
+  const [loadError,setLoadError]=useState("");
   const evidenceUrlsRef=useRef<Record<string,string>>({});
   const counts=reportReviewCounts(items);
   const categories=[...new Set(items.map(i=>i.category))].sort();
@@ -71,7 +72,7 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
     }catch(error){setMessage(error instanceof Error?error.message:"Could not open evidence");}
   }
   async function reload() {
-    setLoading(true);
+    setLoading(true);setLoadError("");
     try {
       const [r,photoResponse]=await Promise.all([
         fetch("/api/v2/hazards",{cache:"no-store"}),
@@ -89,7 +90,7 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
         activeSelectionRef.current=next;
         return next;
       });
-    } catch(e){ setMessage(e instanceof Error?e.message:"Unable to load demo reports"); }
+    } catch(e){setLoadError(e instanceof Error?e.message:"Unable to load fictional reports");setPhotoStates(null);}
     finally{setLoading(false);}
   }
   useEffect(()=>{void reload();},[operatorKey]);
@@ -122,7 +123,7 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
   return <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5" aria-label="Geographic demo report review">
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div><p className="text-xs font-bold uppercase tracking-wider text-teal-700">V2 · fictional incident intake</p><h2 className="mt-1 text-xl font-bold">Geographic hazard report review</h2></div>
-      <button type="button" onClick={()=>void reload()} className="rounded-lg border border-slate-200 px-3 py-2 text-sm">Refresh reports</button>
+      <button type="button" disabled={loading} onClick={()=>void reload()} className="rounded-lg border border-slate-200 px-3 py-2 text-sm disabled:opacity-50">Refresh reports</button>
     </div>
     <p className="mt-2 text-sm text-slate-600">Separate from the old demonstration flood report queue. A corroborated report is not a verified road closure.</p>
     {message?<p role="status" className="mt-3 text-sm text-teal-800">{message}</p>:null}
@@ -160,10 +161,15 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
     </div>
     <div className="mt-4 space-y-3">
       {loading?<p role="status" className="text-sm text-slate-600">Loading fictional geographic reports…</p>:null}
-      {!loading&&items.length>0&&visibleItems.length===0?<p role="status" className="rounded-xl bg-slate-50 p-4 text-sm text-slate-600">No fictional reports match these filters. Clear filters to see all available records.</p>:null}
-      {!loading&&items.length===0?<p className="text-sm text-slate-500">No geographic demo reports yet. Submit one from the resident map.</p>:null}
+      {loadError?<div role="alert" className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-950">
+        <p className="font-semibold">Could not refresh fictional reports. Previously loaded records may be outdated.</p>
+        <p className="mt-1 text-xs">{loadError}</p>
+        <button type="button" disabled={loading} onClick={()=>void reload()} className="mt-3 rounded-lg border border-rose-300 bg-white px-3 py-2 text-xs font-bold">Retry loading</button>
+      </div>:null}
+      {!loading&&!loadError&&items.length>0&&visibleItems.length===0?<p role="status" className="rounded-xl bg-slate-50 p-4 text-sm text-slate-600">No fictional reports match these filters. Clear filters to see all available records.</p>:null}
+      {!loading&&!loadError&&items.length===0?<p className="text-sm text-slate-500">No geographic demo reports yet. Submit one from the resident map.</p>:null}
       <ul className="overflow-hidden rounded-xl border border-slate-200 bg-white divide-y divide-slate-100" aria-label="Fictional geographic reports">
-      {visibleItems.map(item=><li key={item.id} className={selectedReportId===item.id?"bg-teal-50/40":"bg-white"}>
+      {!loadError&&visibleItems.map(item=><li key={item.id} className={selectedReportId===item.id?"bg-teal-50/40":"bg-white"}>
         <button type="button" onClick={()=>toggleReport(item.id)} aria-expanded={selectedReportId===item.id}
           aria-controls={"report-details-"+item.id}
           className="flex w-full flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 text-left transition hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-700 sm:flex-nowrap">
