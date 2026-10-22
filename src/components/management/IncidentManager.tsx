@@ -2,6 +2,7 @@
 import {useEffect,useState} from "react";
 import IncidentRoadCandidates from "@/components/management/IncidentRoadCandidates";
 import {filterIncidentGroups,incidentStatusCounts} from "@/lib/v212-incident-list";
+import {AI_REVIEW_REMINDER,similarityLabel,canManuallyLinkSuggestion} from "@/lib/v214-ai-review-guidance";
 type Report={id:string;category:string;description:string;reviewState:string;createdAt:string};
 type Incident={id:string;title:string;category:string;status:string;reviewNote:string;possibleRoad:string|null;createdAt:string;reports:{reportId:string;linkedAt:string;report:{category:string;description:string;reviewState:string}}[]};
 export default function IncidentManager({operatorKey}:{operatorKey:string}){
@@ -124,8 +125,9 @@ export default function IncidentManager({operatorKey}:{operatorKey:string}){
      {incident.status!=="resolved"&&incident.reports.length>1?<button type="button" disabled={busy||(notes[incident.id]??"").trim().length<8} onClick={()=>void request("/api/v2/incidents/"+incident.id,"DELETE",{reportId:link.reportId,note:notes[incident.id]})} className="rounded border border-rose-200 px-2 py-1 font-semibold text-rose-800 disabled:opacity-40">Unlink (reason required)</button>:null}
     </li>)}</ul>
     {incident.status!=="resolved"?<div className="mt-3 space-y-2 rounded-lg bg-slate-50 p-3">
-     <div className="rounded-lg border border-indigo-200 bg-white p-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+     <details className="rounded-lg border border-indigo-200 bg-white p-3">
+      <summary className="cursor-pointer text-xs font-semibold text-indigo-900">Optional AI similarity · expand to run</summary>
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
        <div><p className="text-xs font-bold text-indigo-900">AI suggestions for this incident</p><p className="text-xs text-slate-600">Compares nearby ungrouped fictional reports. Never links automatically.</p></div>
        <button type="button" disabled={suggestBusy!==null||busy} onClick={()=>void suggest(incident.id)} className="rounded-lg bg-indigo-800 px-3 py-2 text-xs font-bold text-white disabled:opacity-40">{suggestBusy===incident.id?"Comparing…":"Find AI candidates"}</button>
       </div>
@@ -133,17 +135,24 @@ export default function IncidentManager({operatorKey}:{operatorKey:string}){
        <p className="font-semibold">Provider: {suggestions[incident.id].provider} · Model: {suggestions[incident.id].model}</p>
        {suggestions[incident.id].candidates.length===0?<p>No strong candidate detected. Manual linking remains possible.</p>:null}
        {suggestions[incident.id].candidates.map(candidate=><div key={candidate.id} className="rounded border p-2">
-        <p>{candidate.description} · similarity {(candidate.similarity*100).toFixed(1)}%</p>
-        <button type="button" onClick={()=>setLinks(old=>({...old,[incident.id]:candidate.id}))} className="mt-1 font-semibold text-indigo-800 underline">Select for manual linking</button>
+        <p>{candidate.description} · {similarityLabel(candidate.similarity)}</p>
+        <button type="button" disabled={!available.some(r=>r.id===candidate.id)}
+         aria-pressed={links[incident.id]===candidate.id}
+         onClick={()=>setLinks(old=>({...old,[incident.id]:candidate.id}))}
+         className="mt-1 font-semibold text-indigo-800 underline disabled:opacity-50">
+         {links[incident.id]===candidate.id?"Selected for manual review ✓":"Select candidate (no automatic link)"}
+        </button>
        </div>)}
        <p className="text-slate-600">{suggestions[incident.id].disclaimer}</p>
+       <p className="rounded-lg bg-amber-50 p-2 leading-5 text-amber-950">{AI_REVIEW_REMINDER}</p>
       </div>:null}
-     </div>
+     </details>
      <label className="block text-xs">Link another report in same category
       <select value={links[incident.id]??""} onChange={e=>setLinks(p=>({...p,[incident.id]:e.target.value}))} className="mt-1 w-full rounded-lg border bg-white p-2"><option value="">Choose ungrouped report</option>{available.filter(r=>r.category===incident.category).map(r=><option key={r.id} value={r.id}>{r.description.slice(0,90)}</option>)}</select>
      </label>
+     {links[incident.id]?<p role="status" className="text-xs text-amber-950">Candidate selected for manual review only. An operator reason and separate Link selected report click are still required.</p>:null}
      <label className="block text-xs">Operator justification (required for both linking and status change)<input maxLength={400} value={notes[incident.id]??""} onChange={e=>setNotes(p=>({...p,[incident.id]:e.target.value}))} className="mt-1 w-full rounded-lg border p-2" placeholder="Evidence and decision reasoning"/></label>
-     <button className="rounded-lg border border-teal-300 bg-white px-3 py-2 text-xs font-bold disabled:opacity-40" disabled={busy||!links[incident.id]||(notes[incident.id]??"").trim().length<8} onClick={()=>void request("/api/v2/incidents/"+incident.id,"POST",{reportId:links[incident.id],note:notes[incident.id]})}>Link selected report</button>
+     <button className="rounded-lg border border-teal-300 bg-white px-3 py-2 text-xs font-bold disabled:opacity-40" disabled={busy||!canManuallyLinkSuggestion(links[incident.id]??"",available.filter(r=>r.category===incident.category).map(r=>r.id),notes[incident.id]??"")} onClick={()=>void request("/api/v2/incidents/"+incident.id,"POST",{reportId:links[incident.id],note:notes[incident.id]})}>Link selected report</button>
      <label className="block text-xs">Management lifecycle
       <select className="mt-1 w-full rounded-lg border bg-white p-2" value={statuses[incident.id]??incident.status} onChange={e=>setStatuses(p=>({...p,[incident.id]:e.target.value}))}>
        <option value="under_review" disabled={incident.status!=="under_review"}>Under review</option>
