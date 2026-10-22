@@ -11,10 +11,12 @@ import ConnectivityPanel from "@/components/network/ConnectivityPanel";
 import V2HazardManager from "@/components/management/V2HazardManager";
 import IncidentManager from "@/components/management/IncidentManager";
 import IncidentOversight from "@/components/management/IncidentOversight";
+import ReviewAgeQueue from "@/components/management/ReviewAgeQueue";
 import EvidenceInventory from "@/components/management/EvidenceInventory";
 import DemoDataQuality from "@/components/management/DemoDataQuality";
 import ResearchExport from "@/components/management/ResearchExport";
 import RoadTopologyQuality from "@/components/management/RoadTopologyQuality";
+import GeoSourceManifest from "@/components/management/GeoSourceManifest";
 import RoadAccessTags from "@/components/management/RoadAccessTags";
 import AiEvaluationWorkbench from "@/components/management/AiEvaluationWorkbench";
 
@@ -90,10 +92,12 @@ export default function ManagementControls() {
         <div className="border-b border-slate-200 pb-4"><p className="text-xs font-bold uppercase tracking-widest text-teal-700">Operator workflow · demonstration records</p><h2 className="mt-2 text-2xl font-bold tracking-tight">Reports and review history</h2></div>
         <AiEvaluationWorkbench operatorKey={operatorKey} />
         <IncidentOversight operatorKey={operatorKey} />
+        <ReviewAgeQueue operatorKey={operatorKey} />
         <EvidenceInventory operatorKey={operatorKey} />
         <DemoDataQuality operatorKey={operatorKey} />
         <ResearchExport operatorKey={operatorKey} />
         <RoadTopologyQuality operatorKey={operatorKey} />
+        <GeoSourceManifest operatorKey={operatorKey} />
         <RoadAccessTags operatorKey={operatorKey} />
         <IncidentManager operatorKey={operatorKey} />
         <V2HazardManager operatorKey={operatorKey} />
