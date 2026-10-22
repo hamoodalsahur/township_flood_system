@@ -13,3 +13,15 @@ This milestone helps management compare **fictional report coordinates** to line
 Back up your modified BBR GeoJSON and SQLite database before switching branches. In `/management`, choose a fictional incident with a geographic report and click **Inspect nearby road lines**. Confirm candidate names/distances/OSM source links or the clear no-candidates message. The same real-world street can have more than one OSM way; results are geometry proximity estimates, not verified incident/road relationships. Confirm other incident grouping, private photos, Ollama and simulation still work.
 
 Future work: validate geometry provenance and legal access assumptions, assess data quality and topology, and build independent human-reviewed linkage records before considering any road-impact inference.
+
+## V2.8 source provenance notes (new)
+
+Each result additionally shows **unverified** raw `oneway`, `access`, `motor_vehicle`, `bridge`, `tunnel` and `layer` tags when recorded, along with whether original OSM node IDs are preserved. This keeps geographic context transparent during operator inspection.
+
+- Missing `access` and `motor_vehicle` tags mean **unknown**, not permission to drive.
+- Displaying one-way/bridge/layer labels never infers navigability, junction connectivity, verified identity, road impact or closures.
+- Distances remain approximate; OSM ways can be split or share street names.
+- No new operator linking or status-changing action is introduced. Human incident/report review and photo publication controls are unchanged.
+- The operator-only API and UI expose reference-tag metadata, not report descriptions, evidence images, reviewer notes or credentials.
+
+**Local test:** on the batch-testing branch, open `/management` and inspect nearby road lines for an eligible fictional incident. Verify the caveats, raw tags (if present) and source links, and confirm no report/road state changes. If no candidates appear, confirm the existing empty-state message. No schema migration, seed, import, or GeoJSON rewrite is needed.
