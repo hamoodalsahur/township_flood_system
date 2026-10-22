@@ -4,11 +4,17 @@ import {filterReviewReports,reportReviewCounts} from "@/lib/v212-report-review-l
 import { CATEGORY_LABELS, type HazardCategory } from "@/lib/demo-hazards";
 import { relatedReports } from "@/lib/v2-related-reports";
 import {describePrivatePhotoState,type PrivatePhotoState} from "@/lib/v214-evidence-state";
+import {reviewPhotoPresentation} from "@/lib/v216-review-photo-presentation";
 type RecordItem={id:string;category:string;description:string;impact:string;reviewState:string;createdAt:string;latitude:number;longitude:number};
 export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
   const [items,setItems]=useState<RecordItem[]>([]);
   const [photoStates,setPhotoStates]=useState<Record<string,PrivatePhotoState>|null>(null);
   const [selectedReportId,setSelectedReportId]=useState<string|null>(null);
+  const activeSelectionRef=useRef<string|null>(null);
+  const selectedReport=items.find(item=>item.id===selectedReportId);
+  const selectedPhotoMode=photoStates===null?"unavailable":reviewPhotoPresentation(
+    photoStates[selectedReportId??""]??"none",selectedReport?.reviewState??"unverified"
+  );
   const [query,setQuery]=useState("");
   const [stateFilter,setStateFilter]=useState("all");
   const [categoryFilter,setCategoryFilter]=useState("all");
@@ -33,7 +39,9 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
       delete evidenceUrlsRef.current[key];
     }
     setEvidenceUrls({});
-    setSelectedReportId(current=>current===id?null:id);
+    const next=selectedReportId===id?null:id;
+    activeSelectionRef.current=next;
+    setSelectedReportId(next);
   }
   async function runAiAnalysis(id:string) {
     setAiBusy(id);setAiErrors(old=>({...old,[id]:""}));
@@ -51,6 +59,8 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
       const response=await fetch("/api/v2/hazards/"+id+"/evidence/private",{headers:{"x-demo-operator-key":operatorKey},cache:"no-store"});
       if(!response.ok)throw Error(response.status===404?"No private photo is attached to this report.":"Could not retrieve private photo.");
       const blob=await response.blob();
+      // An operator may have switched reports while the private photo was loading.
+      if(activeSelectionRef.current!==id)return;
       const url=URL.createObjectURL(blob);
       setEvidenceUrls(old=>{
         if(old[id])URL.revokeObjectURL(old[id]);
@@ -74,13 +84,20 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
       if(!r.ok) throw Error("Could not load fictional reports. Verify your existing local SQLite connection; do not reset your database.");
       const data=await r.json() as {reports:RecordItem[]};
       setItems(data.reports);
-      setSelectedReportId(current=>data.reports.some(item=>item.id===current)?current:null);
+      setSelectedReportId(current=>{
+        const next=data.reports.some(item=>item.id===current)?current:null;
+        activeSelectionRef.current=next;
+        return next;
+      });
     } catch(e){ setMessage(e instanceof Error?e.message:"Unable to load demo reports"); }
     finally{setLoading(false);}
   }
   useEffect(()=>{void reload();},[operatorKey]);
   // Release private browser object URLs when leaving report review. Never store images on other pages.
-  useEffect(()=>()=>{Object.values(evidenceUrlsRef.current).forEach(url=>URL.revokeObjectURL(url));},[]);
+  useEffect(()=>()=>{
+    activeSelectionRef.current=null;
+    Object.values(evidenceUrlsRef.current).forEach(url=>URL.revokeObjectURL(url));
+  },[]);
   async function review(id:string,decision:"corroborated"|"rejected") {
     setBusy(true);setMessage("");
     try {
@@ -91,6 +108,11 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
       const result=await response.json() as {error?:string};
       if(!response.ok)throw Error(result.error??"Review failed");
       setPublishPhotos(old=>({...old,[id]:false}));
+      if(evidenceUrlsRef.current[id]){
+        URL.revokeObjectURL(evidenceUrlsRef.current[id]);
+        delete evidenceUrlsRef.current[id];
+        setEvidenceUrls(old=>{const next={...old};delete next[id];return next;});
+      }
       setMessage("Fictional report reviewed. Sample photo kept private unless separately approved. No official road status changed.");
       window.dispatchEvent(new Event("township-hazards-updated"));
       await reload();
@@ -156,10 +178,50 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
         </button>
         {selectedReportId===item.id?<div id={"report-details-"+item.id} className="border-t border-teal-100 bg-white px-4 py-4 sm:px-5">
         <p className="text-sm leading-6 text-slate-700">{item.description}</p>
-        <div className="mt-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
-          <p className="font-semibold">Sample photo: {photoStates===null?"Status unavailable":describePrivatePhotoState(photoStates[item.id]??"none").label}</p>
-          <p className="mt-1">{photoStates===null?"The private metadata check could not be completed. Photo-publication choices are disabled until refreshed.":describePrivatePhotoState(photoStates[item.id]??"none").explanation}</p>
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-600">
+          <span>Submitted impact: {item.impact.replaceAll("_"," ")} · {new Date(item.createdAt).toLocaleString()}</span>
+          <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 font-semibold text-slate-700">
+            Photo: {photoStates===null?"Status unavailable":describePrivatePhotoState(photoStates[item.id]??"none").label}
+          </span>
         </div>
+        {selectedPhotoMode==="approved_inline" ? (
+          <figure className="mt-3 max-w-xl overflow-hidden rounded-xl border border-teal-200 bg-teal-50/40 p-3">
+            <img
+              src={`/api/v2/hazards/${encodeURIComponent(item.id)}/evidence/approved`}
+              alt={`Operator-approved fictional sample for ${CATEGORY_LABELS[item.category as HazardCategory]??item.category}`}
+              loading="eager"
+              className="max-h-64 w-full rounded-lg object-contain object-left"
+            />
+            <figcaption className="mt-2 text-xs text-teal-950">
+              Approved for public demo · fictional sample only, not verification of an actual road condition.
+            </figcaption>
+          </figure>
+        ) : null}
+        {selectedPhotoMode==="inspect_private" ? (
+          <div className="mt-3">
+            <button type="button" onClick={()=>void viewEvidence(item.id)}
+              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700">
+              {evidenceUrls[item.id]?"Refresh private photo":"View private sample photo"}
+            </button>
+            {evidenceUrls[item.id]?(
+              <figure className="mt-2 max-w-xl rounded-xl border border-amber-200 bg-amber-50/70 p-3">
+                <img src={evidenceUrls[item.id]} alt={"Private fictional sample for "+item.category}
+                  className="max-h-64 w-full rounded-lg object-contain object-left" />
+                <figcaption className="mt-2 text-xs text-amber-950">
+                  Private operator inspection only · not approved for public demonstration or verified road evidence.
+                </figcaption>
+                <button type="button" className="mt-2 text-xs font-semibold underline"
+                  onClick={()=>{
+                    URL.revokeObjectURL(evidenceUrls[item.id]);
+                    setEvidenceUrls(old=>{const next={...old};delete next[item.id];evidenceUrlsRef.current=next;return next;});
+                  }}>Hide private photo</button>
+              </figure>
+            ):null}
+          </div>
+        ):null}
+        {selectedPhotoMode==="unavailable" ? (
+          <p role="status" className="mt-2 text-xs text-amber-900">Photo metadata unavailable or inconsistent. Refresh reports before making any publication decision.</p>
+        ):null}
         {item.reviewState==="unverified" ? <p className="mt-2 rounded-lg bg-indigo-50 p-3 text-xs text-indigo-900">Rule-based triage (not AI): {relatedReports(item,items).priority.replaceAll("_"," ")}. Possible related report IDs: {relatedReports(item,items).ids.join(", ")||"none"}. Operator review required.</p> : null}
         {item.reviewState==="unverified"?<div className="mt-2 rounded-lg border border-violet-200 bg-violet-50 p-3 text-xs text-violet-950">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -173,15 +235,7 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
             <p className="mt-2 text-violet-800">{aiResults[item.id].disclaimer}</p>
           </div>:null}
         </div>:null}
-        <p className="mt-1 text-xs text-slate-500">Submitted impact: {item.impact.replaceAll("_"," ")} · {new Date(item.createdAt).toLocaleString()}</p>
-        <div className="mt-3">
-          <button type="button" onClick={()=>void viewEvidence(item.id)} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700">View attached private photo (if any)</button>
-          {evidenceUrls[item.id] ? <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
-            <img src={evidenceUrls[item.id]} alt={"Private demonstration evidence for "+item.category} className="max-h-64 max-w-full rounded object-contain" />
-            <p className="mt-2 text-xs text-amber-950">Local operator inspection only. This image is not public, verified, or evidence of real road safety.</p>
-            <button type="button" className="mt-2 text-xs font-semibold underline" onClick={()=>{URL.revokeObjectURL(evidenceUrls[item.id]);setEvidenceUrls(old=>{const next={...old};delete next[item.id];evidenceUrlsRef.current=next;return next;});}}>Hide photo</button>
-          </div> : null}
-        </div>
+
         {item.reviewState==="unverified"?<div className="mt-3 space-y-2">
           <label className="block text-xs font-semibold">Review reason
             <input value={notes[item.id]??""} onChange={e=>setNotes(old=>({...old,[item.id]:e.target.value}))} maxLength={400} className="mt-1 block w-full rounded-lg border border-slate-300 p-2" placeholder="At least 8 characters" />
