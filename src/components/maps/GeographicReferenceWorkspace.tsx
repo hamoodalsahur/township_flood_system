@@ -12,6 +12,7 @@ import { inspectOsmNodeTopology } from "@/lib/bbr-osm-topology";
 import { CATEGORY_LABELS, DEMO_HAZARDS, HAZARD_CATEGORIES, filterDemoHazards, type HazardCategory } from "@/lib/demo-hazards";
 import { HAZARD_SYMBOLS } from "@/lib/hazard-symbols";
 import { prepareDemoPhoto } from "@/lib/demo-photo-client";
+import {inspectDemoReportDraft} from "@/lib/v213-report-draft";
 
 const GeographicReferenceMap = dynamic(() => import("./GeographicReferenceMap"), {
   ssr: false,
@@ -45,11 +46,14 @@ export default function GeographicReferenceWorkspace() {
   const [sendingReport, setSendingReport] = useState(false);
   const [reportMessage, setReportMessage] = useState("");
   const [evidenceFile, setEvidenceFile] = useState<File | null>(null);
+  const [photoInputKey,setPhotoInputKey] = useState(0);
+  const [reportPhase,setReportPhase] = useState<"idle"|"saving"|"attaching">("idle");
+  const hints=inspectDemoReportDraft(reportDescription,draftPosition,evidenceFile);
   const [photoApprovedIds, setPhotoApprovedIds] = useState<string[]>([]);
   async function loadStoredHazards() {
     try {
       const response=await fetch("/api/v2/hazards",{cache:"no-store"});
-      if(!response.ok) throw Error("Demo incident API unavailable. Run npm run db:push.");
+      if(!response.ok) throw Error("Fictional report feed unavailable; check the existing local connection without resetting your database.");
       const payload=await response.json() as {reports:{id:string;category:HazardCategory;description:string;longitude:number;latitude:number;impact:string;reviewState:string;createdAt:string;hasApprovedPhoto:boolean}[]};
       setPhotoApprovedIds(payload.reports.filter(item=>item.hasApprovedPhoto).map(item=>item.id));
       setStoredHazards(payload.reports.map(item=>({
@@ -71,8 +75,11 @@ export default function GeographicReferenceWorkspace() {
   const visibleHazards = showDemoHazards ? filterDemoHazards(hazardCategory,allHazards) : [];
   const selectedHazard = allHazards.find(hazard => hazard.id === selectedHazardId) ?? null;
   async function submitDemoHazard() {
-    if(!draftPosition)return;
-    setSendingReport(true);setReportMessage("");
+    if(!hints.canSubmit||!draftPosition){
+      setReportMessage(hints.locationError??hints.descriptionError??hints.photoError??"Complete the fictional report form.");
+      return;
+    }
+    setSendingReport(true);setReportPhase("saving");setReportMessage("");
     try {
       const response=await fetch("/api/v2/hazards",{
         method:"POST",headers:{"Content-Type":"application/json"},
@@ -82,6 +89,7 @@ export default function GeographicReferenceWorkspace() {
       if(!response.ok)throw Error(result.error??"Report not saved");
       let photoNote = "";
       if(evidenceFile && result.report?.id) {
+        setReportPhase("attaching");
         try {
           const encoded = await prepareDemoPhoto(evidenceFile);
           const upload=await fetch(`/api/v2/hazards/${result.report.id}/evidence`,{
@@ -96,12 +104,12 @@ export default function GeographicReferenceWorkspace() {
           photoNote=" Report saved, but photo could not be attached: "+(photoError instanceof Error?photoError.message:"unknown issue");
         }
       }
-      setReportDescription("");setDraftPosition(null);setEvidenceFile(null);
+      setReportDescription("");setDraftPosition(null);setEvidenceFile(null);setPhotoInputKey(x=>x+1);
       setReportMessage("Fictional incident submitted. No road closure created."+photoNote);
       window.dispatchEvent(new Event("township-hazards-updated"));
       await loadStoredHazards();
     } catch(e){setReportMessage(e instanceof Error?e.message:"Unable to submit demo hazard");}
-    finally{setSendingReport(false);}
+    finally{setSendingReport(false);setReportPhase("idle");}
   }
 
   useEffect(() => {
@@ -195,8 +203,9 @@ export default function GeographicReferenceWorkspace() {
         {hazardCategory !== "all" ? <button type="button" onClick={() => setHazardCategory("all")} className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold">Show all</button> : null}
       </div>
       <details className="mt-3 rounded-xl border border-teal-200 bg-teal-50/50" id="report-demo-hazard">
-        <summary className="cursor-pointer px-4 py-3 text-sm font-bold text-teal-900">Report an example hazard · Click a position on the map</summary>
+        <summary className="cursor-pointer px-4 py-3 text-sm font-bold text-teal-900">Submit a fictional report · Choose a position on the map below</summary>
         <div className="grid gap-3 border-t border-teal-100 p-4 sm:grid-cols-2">
+          <p className="rounded-lg bg-white p-3 text-xs leading-5 text-teal-950 sm:col-span-2">Step 1: Click a fictional location on the map below. Step 2: Describe a made-up issue. Step 3: Submit for separate operator review. No real road closure is created.</p>
           <label className="text-sm font-semibold">Hazard category
             <select value={reportCategory} onChange={e=>setReportCategory(e.target.value as HazardCategory)} className="mt-1 block w-full rounded-lg border border-slate-300 bg-white p-2">
               {HAZARD_CATEGORIES.map(c=><option key={c} value={c}>{CATEGORY_LABELS[c]}</option>)}
@@ -209,23 +218,26 @@ export default function GeographicReferenceWorkspace() {
             </select>
           </label>
           <label className="text-sm font-semibold sm:col-span-2">Fictional report description
-            <textarea value={reportDescription} maxLength={400} rows={2} onChange={e=>setReportDescription(e.target.value)} placeholder="Describe the made-up road issue (8–400 characters)." className="mt-1 block w-full rounded-lg border border-slate-300 p-2" />
+            <textarea value={reportDescription} maxLength={400} rows={3} onChange={e=>{setReportDescription(e.target.value);setReportMessage("");}} placeholder="Describe the made-up road issue (8–400 characters)." aria-describedby="demo-description-help" className="mt-1 block w-full rounded-lg border border-slate-300 p-2" />
+            <span id="demo-description-help" className={"mt-1 block text-xs font-normal "+(reportDescription.length>0&&hints.descriptionError?"text-rose-800":"text-slate-500")}>{reportDescription.trim().length}/400 characters{reportDescription.length>0&&hints.descriptionError?" · "+hints.descriptionError:""}</span>
           </label>
           <label className="text-sm font-semibold sm:col-span-2">Optional demonstration photo (JPEG/PNG, max 5 MB before processing)
-            <input type="file" accept="image/jpeg,image/png" onChange={e=>setEvidenceFile(e.target.files?.[0]??null)}
+            <input key={photoInputKey} type="file" accept="image/jpeg,image/png" onChange={e=>{setEvidenceFile(e.target.files?.[0]??null);setReportMessage("");}}
               className="mt-2 block w-full rounded-lg border border-slate-300 bg-white p-2 text-xs" />
             <span className="mt-1 block text-xs font-normal leading-5 text-slate-600">Processed to a small JPEG without original EXIF metadata. Private to local management; never shown on the public map. Use fictional/sample images without identifiable people.</span>
+            {hints.photoError?<span role="alert" className="mt-1 block text-xs font-semibold text-rose-800">{hints.photoError}</span>:null}
+            {evidenceFile&&!hints.photoError?<span className="mt-1 block text-xs text-teal-800">Selected: {evidenceFile.name} · {(evidenceFile.size/1_000_000).toFixed(2)} MB (private until reviewed).</span>:null}
           </label>
           <div className="flex flex-wrap items-center justify-between gap-3 sm:col-span-2">
-            <p className="text-xs text-slate-600">{draftPosition ? `Selected demo coordinate: ${draftPosition[1].toFixed(5)}, ${draftPosition[0].toFixed(5)}` : "Click a location on the map above to place your draft pin."}</p>
-            <button type="button" disabled={sendingReport||!draftPosition||reportDescription.trim().length<8} onClick={()=>void submitDemoHazard()} className="rounded-lg bg-teal-800 px-4 py-2 text-sm font-bold text-white disabled:opacity-40">Submit fictional report</button>
+            <p className="text-xs text-slate-600">{draftPosition ? `Selected demo coordinate: ${draftPosition[1].toFixed(5)}, ${draftPosition[0].toFixed(5)}` : hints.locationError}</p>
+            <button type="button" disabled={sendingReport||!hints.canSubmit} onClick={()=>void submitDemoHazard()} className="rounded-lg bg-teal-800 px-4 py-2 text-sm font-bold text-white disabled:opacity-40">{reportPhase==="saving"?"Saving fictional report…":reportPhase==="attaching"?"Attaching private sample…":"Submit fictional report"}</button>
           </div>
           {reportMessage?<p role="status" className="text-sm text-teal-900 sm:col-span-2">{reportMessage}</p>:null}
         </div>
       </details>
       {hazardError?<p role="status" className="mt-2 text-xs text-amber-900">{hazardError}</p>:null}
       <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
-        <GeographicReferenceMap roads={visibleRoads} selectedRoadId={selectedRoadId} onSelectRoad={id => { setSelectedRoadId(id); setSelectedHazardId(null); }} focusGroup={groupNumber} selectedNodePosition={selectedNodePosition} hazards={visibleHazards} onSelectHazard={id => { setSelectedHazardId(id); setSelectedRoadId(null); }} selectedHazardId={selectedHazardId} selectedLocation={draftPosition} onChooseLocation={setDraftPosition} />
+        <GeographicReferenceMap roads={visibleRoads} selectedRoadId={selectedRoadId} onSelectRoad={id => { setSelectedRoadId(id); setSelectedHazardId(null); }} focusGroup={groupNumber} selectedNodePosition={selectedNodePosition} hazards={visibleHazards} onSelectHazard={id => { setSelectedHazardId(id); setSelectedRoadId(null); }} selectedHazardId={selectedHazardId} selectedLocation={draftPosition} onChooseLocation={position=>{setDraftPosition(position);setReportMessage("");}} />
         <aside className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 text-sm" aria-live="polite">
           {activeGroup ? <p className="mb-3 rounded-lg bg-amber-50 p-2 text-xs font-medium text-amber-900">Group {activeGroup.groupNumber}: {activeGroup.roadLineCount} mapped lines. Grouping is geometric only, not proof of disconnected roads.</p> : null}
           {selectedHazard ? (
