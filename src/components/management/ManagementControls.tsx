@@ -13,6 +13,7 @@ import IncidentManager from "@/components/management/IncidentManager";
 import IncidentOversight from "@/components/management/IncidentOversight";
 import DemoDataQuality from "@/components/management/DemoDataQuality";
 import ResearchExport from "@/components/management/ResearchExport";
+import RoadTopologyQuality from "@/components/management/RoadTopologyQuality";
 import AiEvaluationWorkbench from "@/components/management/AiEvaluationWorkbench";
 
 export default function ManagementControls() {
@@ -89,6 +90,7 @@ export default function ManagementControls() {
         <IncidentOversight operatorKey={operatorKey} />
         <DemoDataQuality operatorKey={operatorKey} />
         <ResearchExport operatorKey={operatorKey} />
+        <RoadTopologyQuality operatorKey={operatorKey} />
         <IncidentManager operatorKey={operatorKey} />
         <V2HazardManager operatorKey={operatorKey} />
         <ReportWorkspace view="management" operatorKey={operatorKey} />
