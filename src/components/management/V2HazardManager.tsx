@@ -1,10 +1,20 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import {filterReviewReports,reportReviewCounts} from "@/lib/v212-report-review-list";
 import { CATEGORY_LABELS, type HazardCategory } from "@/lib/demo-hazards";
 import { relatedReports } from "@/lib/v2-related-reports";
 type RecordItem={id:string;category:string;description:string;impact:string;reviewState:string;createdAt:string;latitude:number;longitude:number};
 export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
   const [items,setItems]=useState<RecordItem[]>([]);
+  const [query,setQuery]=useState("");
+  const [stateFilter,setStateFilter]=useState("all");
+  const [categoryFilter,setCategoryFilter]=useState("all");
+  const [order,setOrder]=useState<"needs_review_first"|"newest"|"oldest">("needs_review_first");
+  const [loading,setLoading]=useState(true);
+  const evidenceUrlsRef=useRef<Record<string,string>>({});
+  const counts=reportReviewCounts(items);
+  const categories=[...new Set(items.map(i=>i.category))].sort();
+  const visibleItems=filterReviewReports(items,{query,reviewState:stateFilter,category:categoryFilter,order});
   const [notes,setNotes]=useState<Record<string,string>>({});
   const [publishPhotos,setPublishPhotos]=useState<Record<string,boolean>>({});
   const [message,setMessage]=useState("");
@@ -30,18 +40,27 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
       if(!response.ok)throw Error(response.status===404?"No private photo is attached to this report.":"Could not retrieve private photo.");
       const blob=await response.blob();
       const url=URL.createObjectURL(blob);
-      setEvidenceUrls(old=>{if(old[id])URL.revokeObjectURL(old[id]);return {...old,[id]:url};});
+      setEvidenceUrls(old=>{
+        if(old[id])URL.revokeObjectURL(old[id]);
+        const updated={...old,[id]:url};
+        evidenceUrlsRef.current=updated;
+        return updated;
+      });
     }catch(error){setMessage(error instanceof Error?error.message:"Could not open evidence");}
   }
   async function reload() {
+    setLoading(true);
     try {
       const r=await fetch("/api/v2/hazards",{cache:"no-store"});
-      if(!r.ok) throw Error("Could not load demo hazards. Run npm run db:push.");
+      if(!r.ok) throw Error("Could not load fictional reports. Verify your existing local SQLite connection; do not reset your database.");
       const data=await r.json() as {reports:RecordItem[]};
       setItems(data.reports);
     } catch(e){ setMessage(e instanceof Error?e.message:"Unable to load demo reports"); }
+    finally{setLoading(false);}
   }
   useEffect(()=>{void reload();},[]);
+  // Release private browser object URLs when leaving report review. Never store images on other pages.
+  useEffect(()=>()=>{Object.values(evidenceUrlsRef.current).forEach(url=>URL.revokeObjectURL(url));},[]);
   async function review(id:string,decision:"corroborated"|"rejected") {
     setBusy(true);setMessage("");
     try {
@@ -64,11 +83,47 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
     </div>
     <p className="mt-2 text-sm text-slate-600">Separate from the old demonstration flood report queue. A corroborated report is not a verified road closure.</p>
     {message?<p role="status" className="mt-3 text-sm text-teal-800">{message}</p>:null}
+    <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50/50 p-4" aria-label="Find fictional report reviews">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold">Find geographic reports</h3>
+        <span className="text-xs text-slate-600">{visibleItems.length} of {counts.total} visible · {counts.unverified} awaiting human review</span>
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <label className="col-span-2 text-xs font-medium text-slate-700 lg:col-span-1">Search descriptions or IDs
+          <input type="search" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search fictional reports" className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"/>
+        </label>
+        <label className="text-xs font-medium text-slate-700">Review state
+          <select value={stateFilter} onChange={e=>setStateFilter(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
+            <option value="all">All visible reports</option>
+            <option value="unverified">Unverified ({counts.unverified})</option>
+            <option value="corroborated">Corroborated ({counts.corroborated})</option>
+          </select>
+        </label>
+        <label className="text-xs font-medium text-slate-700">Category
+          <select value={categoryFilter} onChange={e=>setCategoryFilter(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
+            <option value="all">All categories</option>
+            {categories.map(category=><option key={category} value={category}>{CATEGORY_LABELS[category as HazardCategory]??category.replaceAll("_"," ")}</option>)}
+          </select>
+        </label>
+        <label className="text-xs font-medium text-slate-700">Order
+          <select value={order} onChange={e=>setOrder(e.target.value as "needs_review_first"|"newest"|"oldest")} className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
+            <option value="needs_review_first">Unverified first</option>
+            <option value="newest">Newest first</option><option value="oldest">Oldest first</option>
+          </select>
+        </label>
+      </div>
+      <button type="button" onClick={()=>{setQuery("");setStateFilter("all");setCategoryFilter("all");setOrder("needs_review_first");}} className="mt-3 text-xs font-semibold text-teal-800 underline underline-offset-2">Clear filters</button>
+      <p className="mt-2 text-xs text-slate-500">The local resident feed excludes rejected reports; these filters only organize the already visible records and never make review decisions.</p>
+    </div>
     <div className="mt-4 space-y-3">
-      {items.length===0?<p className="text-sm text-slate-500">No geographic demo reports yet. Submit one from the resident map.</p>:null}
-      {items.map(item=><article key={item.id} className="rounded-xl border border-slate-200 p-4">
+      {loading?<p role="status" className="text-sm text-slate-600">Loading fictional geographic reports…</p>:null}
+      {!loading&&items.length>0&&visibleItems.length===0?<p role="status" className="rounded-xl bg-slate-50 p-4 text-sm text-slate-600">No fictional reports match these filters. Clear filters to see all available records.</p>:null}
+      {!loading&&items.length===0?<p className="text-sm text-slate-500">No geographic demo reports yet. Submit one from the resident map.</p>:null}
+      {visibleItems.map(item=><article key={item.id} className="rounded-xl border border-slate-200 p-4">
         <div className="flex flex-wrap items-center justify-between gap-2"><strong>{CATEGORY_LABELS[item.category as HazardCategory]??item.category}</strong><span className="text-xs font-bold uppercase text-orange-700">{item.reviewState} · DEMO</span></div>
         <p className="mt-1 text-sm text-slate-700">{item.description}</p>
+        <details className="mt-3 rounded-lg border border-slate-200 bg-slate-50/70 p-3">
+         <summary className="cursor-pointer text-sm font-semibold text-teal-900">View report details, optional AI and private evidence review</summary>
         {item.reviewState==="unverified" ? <p className="mt-2 rounded-lg bg-indigo-50 p-3 text-xs text-indigo-900">Rule-based triage (not AI): {relatedReports(item,items).priority.replaceAll("_"," ")}. Possible related report IDs: {relatedReports(item,items).ids.join(", ")||"none"}. Operator review required.</p> : null}
         {item.reviewState==="unverified"?<div className="mt-2 rounded-lg border border-violet-200 bg-violet-50 p-3 text-xs text-violet-950">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -88,7 +143,7 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
           {evidenceUrls[item.id] ? <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
             <img src={evidenceUrls[item.id]} alt={"Private demonstration evidence for "+item.category} className="max-h-64 max-w-full rounded object-contain" />
             <p className="mt-2 text-xs text-amber-950">Local operator inspection only. This image is not public, verified, or evidence of real road safety.</p>
-            <button type="button" className="mt-2 text-xs font-semibold underline" onClick={()=>{URL.revokeObjectURL(evidenceUrls[item.id]);setEvidenceUrls(old=>{const next={...old};delete next[item.id];return next;});}}>Hide photo</button>
+            <button type="button" className="mt-2 text-xs font-semibold underline" onClick={()=>{URL.revokeObjectURL(evidenceUrls[item.id]);setEvidenceUrls(old=>{const next={...old};delete next[item.id];evidenceUrlsRef.current=next;return next;});}}>Hide photo</button>
           </div> : null}
         </div>
         {item.reviewState==="unverified"?<div className="mt-3 space-y-2">
@@ -101,6 +156,7 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
             <button type="button" disabled={busy||(notes[item.id]??"").trim().length<8} onClick={()=>void review(item.id,"rejected")} className="rounded-lg border border-slate-300 px-3 py-2 text-xs disabled:opacity-40">Reject report</button>
           </div>
         </div>:null}
+        </details>
       </article>)}
     </div>
   </section>;
