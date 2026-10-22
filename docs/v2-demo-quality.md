@@ -1,0 +1,3 @@
+# Demo report quality (read-only)
+
+A local operator-only dashboard checks authored fictional V2 records for inconsistent incident categories, rejected reports still linked, invalid WGS84 coordinate ranges, incomplete descriptions, empty incident groups, and unrecognised lifecycle statuses. Results are not real-world geographic verification, hazard proof, or safety information. No database changes or automatic fixes are made. To test, back up local SQLite and GeoJSON, switch to the PR, run `npm install` and `npm run dev`, sign in to `/management` and use the fictional data consistency panel. Existing photo and Ollama workflows should remain unaffected.
