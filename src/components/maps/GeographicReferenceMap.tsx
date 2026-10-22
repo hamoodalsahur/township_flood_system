@@ -6,6 +6,7 @@ import { HAZARD_SYMBOLS } from "@/lib/hazard-symbols";
 import { useEffect } from "react";
 import { bbrReferencePoints, isValidLonLat } from "@/lib/bbr-reference";
 import { roadStyle } from "@/lib/bbr-road-display";
+import {candidateVicinityColor,type CandidateVicinityStroke} from "@/lib/v215-road-vicinity";
 import type { RoadFeature } from "@/lib/bbr-roads";
 import type { DemoHazard } from "@/lib/demo-hazards";
 
@@ -48,6 +49,7 @@ const features = bbrReferencePoints.features.filter(feature => isValidLonLat(fea
 
 export default function GeographicReferenceMap({
   roads = [],
+  vicinityStrokes = [],
   selectedRoadId,
   onSelectRoad,
   focusGroup = 0,
@@ -59,6 +61,7 @@ export default function GeographicReferenceMap({
   selectedLocation = null,
 }: {
   roads?: RoadFeature[];
+  vicinityStrokes?: readonly CandidateVicinityStroke[];
   selectedRoadId: string | null;
   onSelectRoad: (id: string) => void;
   focusGroup?: number;
@@ -103,6 +106,17 @@ export default function GeographicReferenceMap({
             </Polyline>
           );
         })}
+        {vicinityStrokes.map(stroke=>(
+          <Polyline key={stroke.reportId+"-"+stroke.wayId}
+            positions={stroke.points.map(([lon,lat])=>[lat,lon] as [number,number])}
+            pathOptions={{color:candidateVicinityColor(stroke.impact),weight:8,opacity:0.92,dashArray:"10 6"}}
+            eventHandlers={{click:()=>onSelectRoad(stroke.wayId)}}>
+            <Tooltip sticky>
+              Fictional human-corroborated report vicinity · {stroke.impact.replaceAll("_"," ")} · about {stroke.approximateMetres} m from unverified OSM line.
+              NOT a verified road obstruction, closure or navigable road status.
+            </Tooltip>
+          </Polyline>
+        ))}
         {hazards.map(hazard => (
           <Marker key={hazard.id} position={[hazard.coordinates[1], hazard.coordinates[0]]}
             icon={markerIcon(hazard.category, selectedHazardId === hazard.id)}

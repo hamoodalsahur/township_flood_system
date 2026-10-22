@@ -21,3 +21,9 @@ test("filters road features without editing the source list", () => {
 test("major roads display more prominently than service roads", () => {
   assert.ok(roadStyle("primary").weight > roadStyle("service").weight);
 });
+
+test("all unverified OSM categories use distinguishable blue hues, not road safety colours",()=>{
+ const m=roadStyle("primary"),l=roadStyle("residential"),s=roadStyle("service"),o=roadStyle("road");
+ assert.deepEqual([m.color,l.color,s.color,o.color],["#2563eb","#60a5fa","#93c5fd","#bfdbfe"]);
+ assert.ok(m.weight>l.weight&&l.weight>s.weight);
+});
