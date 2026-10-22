@@ -5,6 +5,7 @@ import {prisma} from "@/lib/db";
 import {canUseDemoOperatorApi} from "@/lib/demo-access";
 import {validRoadCollection} from "@/lib/bbr-roads";
 import {candidateRoads,type RoadCandidate} from "@/lib/v2-road-candidates";
+import {summarizeRoadObservations} from "@/lib/v2-road-observation-summary";
 export const dynamic="force-dynamic";
 /** Read-only spatial comparison. It does not associate or close a road in the database. */
 export async function GET(request:Request,context:{params:Promise<{id:string}>}){
@@ -24,7 +25,15 @@ export async function GET(request:Request,context:{params:Promise<{id:string}>})
     if(!prior||candidate.distanceMetres<prior.distanceMetres)map.set(candidate.id,candidate);
    }
   }
-  return NextResponse.json({candidates:[...map.values()].sort((a,b)=>a.distanceMetres-b.distanceMetres||a.id.localeCompare(b.id)).slice(0,8),
+  const points=locations.map(location=>[location.longitude,location.latitude] as const);
+  const candidates=[...map.values()]
+    .sort((a,b)=>a.distanceMetres-b.distanceMetres||a.id.localeCompare(b.id))
+    .slice(0,8)
+    .map(candidate=>({
+      ...candidate,
+      observationSummary:summarizeRoadObservations(points,raw.features,candidate.id)
+    }));
+  return NextResponse.json({candidates,
     reportLocations:locations.length,roadFeaturesScanned:raw.features.length,
     disclaimer:"Proximity to an unverified OSM road line is NOT an incident-to-road confirmation, navigable connection, road closure or travel safety instruction. Review by an authorised operator is required."},
     {headers:{"Cache-Control":"private, no-store"}});
