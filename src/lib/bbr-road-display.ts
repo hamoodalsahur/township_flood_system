@@ -20,7 +20,7 @@ export function filterRoads(roads: RoadFeature[], category: RoadFilter): RoadFea
 
 export function roadStyle(highway: string): { color: string; weight: number; opacity: number } {
   switch (roadCategory(highway)) {
-    case "major": return { color: "#2563eb", weight: 5.5, opacity: 0.95 };
+    case "major": return { color: "#2563eb", weight: 3.8, opacity: 0.58 };
     case "local": return { color: "#60a5fa", weight: 3.5, opacity: 0.85 };
     case "service": return { color: "#93c5fd", weight: 2.4, opacity: 0.8 };
     default: return { color: "#bfdbfe", weight: 2, opacity: 0.75 };
