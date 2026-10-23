@@ -2,8 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import {filterReviewReports,reportReviewCounts} from "@/lib/v212-report-review-list";
 import { CATEGORY_LABELS, type HazardCategory } from "@/lib/demo-hazards";
-import { relatedReports } from "@/lib/v2-related-reports";
-import {describePrivatePhotoState,type PrivatePhotoState} from "@/lib/v214-evidence-state";
+import {type PrivatePhotoState} from "@/lib/v214-evidence-state";
 import {reviewPhotoPresentation} from "@/lib/v216-review-photo-presentation";
 type RecordItem={id:string;category:string;description:string;impact:string;reviewState:string;createdAt:string;latitude:number;longitude:number};
 export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
@@ -86,7 +85,7 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
       const data=await r.json() as {reports:RecordItem[]};
       setItems(data.reports);
       setSelectedReportId(current=>{
-        const next=data.reports.some(item=>item.id===current)?current:null;
+        const next=data.reports.some(item=>item.id===current)?current:(data.reports.find(item=>item.reviewState==="unverified")?.id??data.reports[0]?.id??null);
         activeSelectionRef.current=next;
         return next;
       });
@@ -99,6 +98,14 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
     activeSelectionRef.current=null;
     Object.values(evidenceUrlsRef.current).forEach(url=>URL.revokeObjectURL(url));
   },[]);
+  // The authenticated operator can inspect an attached sample automatically.
+  // The private endpoint still requires the operator key; public access is unchanged.
+  useEffect(()=>{
+    if(selectedReportId && selectedPhotoMode==="inspect_private" && !evidenceUrlsRef.current[selectedReportId]){
+      void viewEvidence(selectedReportId);
+    }
+  },[selectedReportId,selectedPhotoMode,photoStates,operatorKey]);
+
   async function review(id:string,decision:"corroborated"|"rejected") {
     setBusy(true);setMessage("");
     try {
@@ -120,141 +127,153 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
     }catch(e){setMessage(e instanceof Error?e.message:"Could not review");}
     finally{setBusy(false);}
   }
-  return <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5" aria-label="Geographic demo report review">
-    <div className="flex flex-wrap items-center justify-between gap-3">
-      <div><p className="text-xs font-bold uppercase tracking-wider text-teal-700">V2 · fictional incident intake</p><h2 className="mt-1 text-xl font-bold">Geographic hazard report review</h2></div>
-      <button type="button" disabled={loading} onClick={()=>void reload()} className="rounded-lg border border-slate-200 px-3 py-2 text-sm disabled:opacity-50">Refresh reports</button>
-    </div>
-    <p className="mt-2 text-sm text-slate-600">Separate from the old demonstration flood report queue. A corroborated report is not a verified road closure.</p>
-    {message?<p role="status" className="mt-3 text-sm text-teal-800">{message}</p>:null}
-    <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50/50 p-4" aria-label="Find fictional report reviews">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold">Find geographic reports</h3>
-        <span className="text-xs text-slate-600">{visibleItems.length} of {counts.total} visible · {counts.unverified} awaiting human review</span>
+  const hasPhoto=(id:string)=>photoStates!==null && photoStates[id]!==undefined && photoStates[id]!=="none";
+  const statusName=(state:string)=>state==="corroborated"?"Reviewed":state==="unverified"?"Awaiting review":"Rejected";
+  const categoryName=(name:string)=>CATEGORY_LABELS[name as HazardCategory]??name.replaceAll("_"," ");
+  return <section className="mt-5" aria-label="Geographic report review">
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <h2 className="text-xl font-bold text-slate-900">Report review</h2>
+        <p className="mt-1 text-sm text-slate-500">{counts.unverified} awaiting review · {counts.total} fictional reports</p>
       </div>
-      <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <label className="col-span-2 text-xs font-medium text-slate-700 lg:col-span-1">Search descriptions or IDs
-          <input type="search" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search fictional reports" className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"/>
-        </label>
-        <label className="text-xs font-medium text-slate-700">Review state
-          <select value={stateFilter} onChange={e=>setStateFilter(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
-            <option value="all">All visible reports</option>
-            <option value="unverified">Unverified ({counts.unverified})</option>
-            <option value="corroborated">Corroborated ({counts.corroborated})</option>
-          </select>
-        </label>
-        <label className="text-xs font-medium text-slate-700">Category
-          <select value={categoryFilter} onChange={e=>setCategoryFilter(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
-            <option value="all">All categories</option>
-            {categories.map(category=><option key={category} value={category}>{CATEGORY_LABELS[category as HazardCategory]??category.replaceAll("_"," ")}</option>)}
-          </select>
-        </label>
-        <label className="text-xs font-medium text-slate-700">Order
-          <select value={order} onChange={e=>setOrder(e.target.value as "needs_review_first"|"newest"|"oldest")} className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
-            <option value="needs_review_first">Unverified first</option>
-            <option value="newest">Newest first</option><option value="oldest">Oldest first</option>
-          </select>
-        </label>
-      </div>
-      <button type="button" onClick={()=>{setQuery("");setStateFilter("all");setCategoryFilter("all");setOrder("needs_review_first");}} className="mt-3 text-xs font-semibold text-teal-800 underline underline-offset-2">Clear filters</button>
-      <p className="mt-2 text-xs text-slate-500">The local resident feed excludes rejected reports; these filters only organize the already visible records and never make review decisions.</p>
+      <button type="button" disabled={loading} onClick={()=>void reload()} className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">Refresh reports</button>
     </div>
-    <div className="mt-4 space-y-3">
-      {loading?<p role="status" className="text-sm text-slate-600">Loading fictional geographic reports…</p>:null}
-      {loadError?<div role="alert" className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-950">
-        <p className="font-semibold">Could not refresh fictional reports. Previously loaded records may be outdated.</p>
-        <p className="mt-1 text-xs">{loadError}</p>
-        <button type="button" disabled={loading} onClick={()=>void reload()} className="mt-3 rounded-lg border border-rose-300 bg-white px-3 py-2 text-xs font-bold">Retry loading</button>
-      </div>:null}
-      {!loading&&!loadError&&items.length>0&&visibleItems.length===0?<p role="status" className="rounded-xl bg-slate-50 p-4 text-sm text-slate-600">No fictional reports match these filters. Clear filters to see all available records.</p>:null}
-      {!loading&&!loadError&&items.length===0?<p className="text-sm text-slate-500">No geographic demo reports yet. Submit one from the resident map.</p>:null}
-      <ul className="overflow-hidden rounded-xl border border-slate-200 bg-white divide-y divide-slate-100" aria-label="Fictional geographic reports">
-      {!loadError&&visibleItems.map(item=><li key={item.id} className={selectedReportId===item.id?"bg-teal-50/40":"bg-white"}>
-        <button type="button" onClick={()=>toggleReport(item.id)} aria-expanded={selectedReportId===item.id}
-          aria-controls={"report-details-"+item.id}
-          className="flex w-full flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 text-left transition hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-700 sm:flex-nowrap">
-          <span className="min-w-0 flex-1">
-            <strong className="block truncate text-sm text-slate-900">{CATEGORY_LABELS[item.category as HazardCategory]??item.category}</strong>
-            <span className="block truncate text-xs text-slate-500">{item.description}</span>
-          </span>
-          <span className="whitespace-nowrap text-xs text-slate-500">{new Date(item.createdAt).toLocaleDateString()}</span>
-          <span className="hidden whitespace-nowrap text-[11px] font-medium text-slate-500 lg:inline">{photoStates===null?"Photo status unavailable":describePrivatePhotoState(photoStates[item.id]??"none").label}</span>
-          <span className={"rounded-full px-2 py-1 text-[11px] font-bold uppercase "+(item.reviewState==="unverified"?"bg-amber-50 text-amber-900":"bg-teal-50 text-teal-900")}>{item.reviewState} · DEMO</span>
-          <span className="min-w-12 text-right text-xs font-semibold text-teal-800">{selectedReportId===item.id?"Hide ▲":"View ▼"}</span>
-        </button>
-        {selectedReportId===item.id?<div id={"report-details-"+item.id} className="border-t border-teal-100 bg-white px-4 py-4 sm:px-5">
-        <p className="text-sm leading-6 text-slate-700">{item.description}</p>
-        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-600">
-          <span>Submitted impact: {item.impact.replaceAll("_"," ")} · {new Date(item.createdAt).toLocaleString()}</span>
-          <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 font-semibold text-slate-700">
-            Photo: {photoStates===null?"Status unavailable":describePrivatePhotoState(photoStates[item.id]??"none").label}
-          </span>
-        </div>
-        {selectedPhotoMode==="approved_inline" ? (
-          <figure className="mt-3 max-w-xl overflow-hidden rounded-xl border border-teal-200 bg-teal-50/40 p-3">
-            <img
-              src={`/api/v2/hazards/${encodeURIComponent(item.id)}/evidence/approved`}
-              alt={`Operator-approved fictional sample for ${CATEGORY_LABELS[item.category as HazardCategory]??item.category}`}
-              loading="eager"
-              className="max-h-64 w-full rounded-lg object-contain object-left"
-            />
-            <figcaption className="mt-2 text-xs text-teal-950">
-              Approved for public demo · fictional sample only, not verification of an actual road condition.
-            </figcaption>
-          </figure>
-        ) : null}
-        {selectedPhotoMode==="inspect_private" ? (
-          <div className="mt-3">
-            <button type="button" onClick={()=>void viewEvidence(item.id)}
-              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700">
-              {evidenceUrls[item.id]?"Refresh private photo":"View private sample photo"}
-            </button>
-            {evidenceUrls[item.id]?(
-              <figure className="mt-2 max-w-xl rounded-xl border border-amber-200 bg-amber-50/70 p-3">
-                <img src={evidenceUrls[item.id]} alt={"Private fictional sample for "+item.category}
-                  className="max-h-64 w-full rounded-lg object-contain object-left" />
-                <figcaption className="mt-2 text-xs text-amber-950">
-                  Private operator inspection only · not approved for public demonstration or verified road evidence.
-                </figcaption>
-                <button type="button" className="mt-2 text-xs font-semibold underline"
-                  onClick={()=>{
-                    URL.revokeObjectURL(evidenceUrls[item.id]);
-                    setEvidenceUrls(old=>{const next={...old};delete next[item.id];evidenceUrlsRef.current=next;return next;});
-                  }}>Hide private photo</button>
-              </figure>
-            ):null}
+    {message && <p role="status" className="mb-4 rounded-xl bg-teal-50 px-4 py-3 text-sm text-teal-950">{message}</p>}
+    {loadError && <div role="alert" className="mb-4 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900">
+      <p className="font-semibold">Could not load reports. No previous review data is shown as current.</p>
+      <p className="mt-1">{loadError}</p>
+      <button type="button" onClick={()=>void reload()} className="mt-2 font-semibold underline">Retry</button>
+    </div>}
+    {loading && <p role="status" className="rounded-xl border bg-white p-5 text-sm text-slate-600">Loading reports…</p>}
+    {!loading && !loadError && <div className="grid items-start gap-5 xl:grid-cols-[minmax(280px,0.9fr)_minmax(0,1.35fr)]">
+      <div className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="space-y-3 border-b border-slate-100 p-4">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="text-lg font-bold">Incoming reports</h3>
+            <span className="text-xs text-slate-500">{visibleItems.length} shown</span>
           </div>
-        ):null}
-        {selectedPhotoMode==="unavailable" ? (
-          <p role="status" className="mt-2 text-xs text-amber-900">Photo metadata unavailable or inconsistent. Refresh reports before making any publication decision.</p>
-        ):null}
-        {item.reviewState==="unverified" ? <p className="mt-2 rounded-lg bg-indigo-50 p-3 text-xs text-indigo-900">Rule-based triage (not AI): {relatedReports(item,items).priority.replaceAll("_"," ")}. Possible related report IDs: {relatedReports(item,items).ids.join(", ")||"none"}. Operator review required.</p> : null}
-        {item.reviewState==="unverified"?<div className="mt-2 rounded-lg border border-violet-200 bg-violet-50 p-3 text-xs text-violet-950">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div><p className="font-bold">AI semantic matching · optional</p><p className="mt-1">Compare fictional descriptions with a model. Human review required.</p></div>
-            <button type="button" disabled={aiBusy!==null} onClick={()=>void runAiAnalysis(item.id)} className="rounded-lg bg-violet-800 px-3 py-2 font-semibold text-white disabled:opacity-50">{aiBusy===item.id?"Analysing…":"Run AI comparison"}</button>
-          </div>
-          {aiErrors[item.id]?<p role="status" className="mt-2 text-rose-800">{aiErrors[item.id]}</p>:null}
-          {aiResults[item.id]?<div className="mt-3 space-y-1">
-            <p className="font-semibold">Provider: {aiResults[item.id].provider} · Model: {aiResults[item.id].model} · compared {aiResults[item.id].analysed} reports</p>
-            {aiResults[item.id].matches.length?aiResults[item.id].matches.map(match=><p key={match.id}>Possible match: {match.id} · similarity {(match.similarity*100).toFixed(1)}% · {match.category.replaceAll("_"," ")}</p>):<p>No strong semantic matches found.</p>}
-            <p className="mt-2 text-violet-800">{aiResults[item.id].disclaimer}</p>
-          </div>:null}
-        </div>:null}
-
-        {item.reviewState==="unverified"?<div className="mt-3 space-y-2">
-          <label className="block text-xs font-semibold">Review reason
-            <input value={notes[item.id]??""} onChange={e=>setNotes(old=>({...old,[item.id]:e.target.value}))} maxLength={400} className="mt-1 block w-full rounded-lg border border-slate-300 p-2" placeholder="At least 8 characters" />
+          <label className="block text-xs font-medium text-slate-600">Search reports
+            <input type="search" value={query} onChange={e=>setQuery(e.target.value)}
+              placeholder="Category, description or ID…" className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm"/>
           </label>
-          <label className="flex items-start gap-2 text-xs text-slate-700"><input type="checkbox" checked={photoStates?.[item.id]==="private_unreviewed"&&publishPhotos[item.id]===true} disabled={photoStates?.[item.id]!=="private_unreviewed"} onChange={e=>setPublishPhotos(prev=>({...prev,[item.id]:e.target.checked}))} /> Separately approve the attached sample photo for public demonstration (only if no identifiable people or private details). Otherwise keep it private.</label>
-          <div className="flex gap-2">
-            <button type="button" disabled={busy||(notes[item.id]??"").trim().length<8} onClick={()=>void review(item.id,"corroborated")} className="rounded-lg bg-teal-800 px-3 py-2 text-xs font-bold text-white disabled:opacity-40">Corroborate report</button>
-            <button type="button" disabled={busy||(notes[item.id]??"").trim().length<8} onClick={()=>void review(item.id,"rejected")} className="rounded-lg border border-slate-300 px-3 py-2 text-xs disabled:opacity-40">Reject report</button>
+          <div className="grid grid-cols-2 gap-2">
+            <label className="text-xs font-medium text-slate-600">Review status
+              <select value={stateFilter} onChange={e=>setStateFilter(e.target.value)}
+                className="mt-1 w-full rounded-xl border border-slate-300 bg-white p-2 text-sm">
+                <option value="all">All statuses</option>
+                <option value="unverified">Awaiting review ({counts.unverified})</option>
+                <option value="corroborated">Reviewed ({counts.corroborated})</option>
+              </select>
+            </label>
+            <label className="text-xs font-medium text-slate-600">Category
+              <select value={categoryFilter} onChange={e=>setCategoryFilter(e.target.value)}
+                className="mt-1 w-full rounded-xl border border-slate-300 bg-white p-2 text-sm">
+                <option value="all">All categories</option>
+                {categories.map(category=><option key={category} value={category}>{categoryName(category)}</option>)}
+              </select>
+            </label>
           </div>
-        </div>:null}
-        </div>:null}
-      </li>)}
-      </ul>
-    </div>
+          <div className="flex items-center justify-between gap-2">
+            <label className="text-xs font-medium text-slate-600">Sort by
+              <select value={order} onChange={e=>setOrder(e.target.value as "needs_review_first"|"newest"|"oldest")}
+                className="ml-2 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs">
+                <option value="needs_review_first">Needs review</option>
+                <option value="newest">Newest</option>
+                <option value="oldest">Oldest</option>
+              </select>
+            </label>
+            <button type="button" onClick={()=>{setQuery("");setStateFilter("all");setCategoryFilter("all");setOrder("needs_review_first");}}
+              className="text-xs font-semibold text-teal-800 hover:underline">Clear filters</button>
+          </div>
+        </div>
+        {visibleItems.length===0 && <p role="status" className="p-5 text-sm text-slate-500">No matching reports.</p>}
+        <ul aria-label="Incoming fictional reports" className="max-h-[750px] divide-y divide-slate-100 overflow-y-auto">
+          {visibleItems.map(item=><li key={item.id}>
+            <button type="button" onClick={()=>toggleReport(item.id)} aria-pressed={selectedReportId===item.id}
+              className={"w-full px-4 py-4 text-left transition hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-700 "+
+                (selectedReportId===item.id?"bg-teal-50 ring-1 ring-inset ring-teal-200":"")}>
+              <div className="flex items-start justify-between gap-2">
+                <strong className="text-sm text-slate-900">{categoryName(item.category)}</strong>
+                <span className={"shrink-0 rounded-full px-2 py-1 text-[11px] font-semibold "+
+                  (item.reviewState==="unverified"?"bg-amber-50 text-amber-800":"bg-teal-50 text-teal-800")}>{statusName(item.reviewState)}</span>
+              </div>
+              <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-600">{item.description}</p>
+              <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-slate-500">
+                <span>{new Date(item.createdAt).toLocaleString()}</span>
+                {hasPhoto(item.id)&&<span aria-label="Attached sample photo">Photo attached</span>}
+              </div>
+            </button>
+          </li>)}
+        </ul>
+      </div>
+      <div className="min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+        {selectedReport && visibleItems.some(i=>i.id===selectedReport.id) ? <>
+          <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 pb-5">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold uppercase tracking-wide text-teal-800">{categoryName(selectedReport.category)}</p>
+              <h3 className="mt-1 text-xl font-bold text-slate-900 sm:text-2xl">{selectedReport.description}</h3>
+              <p className="mt-2 text-xs text-slate-500">{new Date(selectedReport.createdAt).toLocaleString()} · Report {selectedReport.id}</p>
+            </div>
+            <span className={"rounded-full px-3 py-1.5 text-xs font-semibold "+
+              (selectedReport.reviewState==="unverified"?"bg-amber-50 text-amber-900":"bg-teal-50 text-teal-900")}>{statusName(selectedReport.reviewState)}</span>
+          </div>
+          <div className="mt-5">
+            <h4 className="mb-3 text-sm font-bold text-slate-900">Submitted photo</h4>
+            {selectedPhotoMode==="approved_inline" && <img
+              src={"/api/v2/hazards/"+encodeURIComponent(selectedReport.id)+"/evidence/approved"}
+              alt={"Approved fictional sample for "+categoryName(selectedReport.category)}
+              className="max-h-80 w-full rounded-xl bg-slate-50 object-contain"/>}
+            {selectedPhotoMode==="inspect_private" && (evidenceUrls[selectedReport.id]
+              ? <img src={evidenceUrls[selectedReport.id]} alt={"Attached fictional sample for "+categoryName(selectedReport.category)}
+                  className="max-h-80 w-full rounded-xl bg-slate-50 object-contain"/>
+              : <p role="status" className="rounded-xl bg-slate-50 p-4 text-sm text-slate-600">Loading attached image for operator review…</p>)}
+            {selectedPhotoMode==="none" && <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-500">No photo attached.</p>}
+            {selectedPhotoMode==="unavailable" && <p role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">Photo information could not be verified. Refresh before making a photo visibility decision.</p>}
+          </div>
+          <div className="mt-5 grid gap-3 border-b border-slate-100 pb-5 text-sm text-slate-700 sm:grid-cols-2">
+            <div><span className="block text-xs text-slate-500">Reported impact</span><strong className="font-semibold">{selectedReport.impact.replaceAll("_"," ")}</strong></div>
+            <div><span className="block text-xs text-slate-500">Reported location (demo)</span><strong className="font-semibold">{selectedReport.latitude.toFixed(5)}, {selectedReport.longitude.toFixed(5)}</strong></div>
+          </div>
+          {selectedReport.reviewState==="unverified" && <div className="mt-5 space-y-4">
+            <label className="block text-sm font-semibold text-slate-800">Reason for decision
+              <textarea value={notes[selectedReport.id]??""} onChange={e=>setNotes(old=>({...old,[selectedReport.id]:e.target.value}))}
+                maxLength={400} rows={2} placeholder="Brief reason (at least 8 characters)"
+                className="mt-2 w-full resize-y rounded-xl border border-slate-300 p-3 text-sm font-normal"/>
+            </label>
+            {photoStates?.[selectedReport.id]==="private_unreviewed" && <label className="flex items-center gap-3 rounded-xl border border-slate-200 p-3 text-sm text-slate-700">
+              <input type="checkbox" className="h-4 w-4 accent-teal-800"
+                checked={publishPhotos[selectedReport.id]===true}
+                onChange={e=>setPublishPhotos(p=>({...p,[selectedReport.id]:e.target.checked}))}/>
+              <span>Also show this photo in the resident app after approval <small className="block text-xs text-slate-500">Only select if it contains no identifiable people or private details.</small></span>
+            </label>}
+            <div className="rounded-xl border border-violet-100 bg-violet-50/60 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div><h4 className="text-sm font-semibold text-slate-900">Similar reports</h4><p className="mt-1 text-xs text-slate-600">Optional AI comparison. You make the decision.</p></div>
+                <button type="button" disabled={aiBusy!==null} onClick={()=>void runAiAnalysis(selectedReport.id)}
+                  className="rounded-lg bg-violet-800 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50">
+                  {aiBusy===selectedReport.id?"Checking…":"Find similar reports"}
+                </button>
+              </div>
+              {aiErrors[selectedReport.id] && <p role="status" className="mt-2 text-xs text-rose-800">{aiErrors[selectedReport.id]}</p>}
+              {aiResults[selectedReport.id] && <div className="mt-3 space-y-1 text-xs text-slate-700">
+                {aiResults[selectedReport.id].matches.length
+                  ? aiResults[selectedReport.id].matches.map(m=><p key={m.id}>Possible match: {m.id} · {(m.similarity*100).toFixed(0)}% similarity</p>)
+                  : <p>No strong matches found.</p>}
+                <p className="pt-1 text-slate-500">Advisory only; not automatic verification.</p>
+              </div>}
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <button type="button" disabled={busy||(notes[selectedReport.id]??"").trim().length<8}
+                onClick={()=>void review(selectedReport.id,"corroborated")}
+                className="min-h-11 flex-1 rounded-xl bg-teal-800 px-5 py-3 text-sm font-bold text-white hover:bg-teal-700 disabled:opacity-40">Approve report</button>
+              <button type="button" disabled={busy||(notes[selectedReport.id]??"").trim().length<8}
+                onClick={()=>void review(selectedReport.id,"rejected")}
+                className="min-h-11 flex-1 rounded-xl border border-rose-200 px-5 py-3 text-sm font-bold text-rose-800 hover:bg-rose-50 disabled:opacity-40">Reject report</button>
+            </div>
+            <p className="text-xs text-slate-500">Approval means a human reviewed a fictional submission; it does not verify any road hazard.</p>
+          </div>}
+        </> : <div className="py-16 text-center text-sm text-slate-500">Select a report from the list to inspect its details.</div>}
+      </div>
+    </div>}
   </section>;
 }
