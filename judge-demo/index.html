@@ -13,7 +13,7 @@ body{background:#f8fafc;color:#0f172a}body>header{display:none}.appframe{min-hei
 <header><div class="eyebrow">Hackathon • Interactive judge prototype</div><h1>Township Road & Hazard Intelligence</h1><p>Bandar Bukit Raja study area · Fictional incident discovery, review and reporting</p></header>
 <div class="appframe"><aside class="sidebar"><div class="brand"><div class="brandmark">≋</div><div><strong>Township Road &amp;<br>Hazard Intelligence</strong><small>Management workspace</small></div></div><nav aria-label="Management sections"><button class="navbtn selected" data-view="overview">▦ &nbsp; Overview</button><button class="navbtn" data-view="incidents">☷ &nbsp; Incidents</button><button class="navbtn" data-view="maps">♧ &nbsp; Maps &amp; Simulation</button><button class="navbtn" data-view="evidence">▧ &nbsp; Evidence</button><button class="navbtn" data-view="research">◇ &nbsp; AI &amp; Research</button><button class="navbtn" data-view="system">⚙ &nbsp; System</button></nav><div class="sidebarfoot">Hackathon demonstration. Incident records are fictional; OSM roads are unverified reference data.</div></aside><div class="workarea"><div class="worktop"><b>Township management</b><div style="display:flex;gap:10px;align-items:center"><span style="font-size:12px;color:#64748b">Public judge preview</span><span class="avatar">OP</span></div></div><main class="shell"><div class="notice"><b>Demonstration only.</b> Every incident is invented. OpenStreetMap background streets are reference geography, not verified road accessibility. Actions on this page affect only this browser session—no shared database, real dispatch, or production AI.</div>
 <section class="stats"><div class="stat"><strong id="total">0</strong><span>Demo reports</span></div><div class="stat"><strong id="approved">0</strong><span>Corroborated (fictional)</span></div><div class="stat"><strong id="pending">0</strong><span>Awaiting review</span></div><div class="stat"><strong id="rejected">0</strong><span>Rejected</span></div></section>
-<section class="layout"><div class="panel mapbox"><div class="panelhead"><div><h2>BBR incident map</h2><p>Tap markers for details, or tap any point to compose a simulated report.</p></div><button class="btn" id="reset">Reset demonstration</button></div><div id="map" class="map" role="application" aria-label="Interactive fictional incident map"></div><div id="mapWarning" role="alert">Map tiles are unavailable. The fictional incident list and controls still work; check internet access to see the OpenStreetMap background.</div><div class="padded small">Base map © OpenStreetMap contributors. This prototype shows OSM map tiles with <b>illustrative blue route-like overlays</b>, not your private 1,269-feature road GeoJSON. Roads are illustrative and do not indicate safe routes or closures.</div></div>
+<section class="layout"><div class="panel mapbox"><div class="panelhead"><div><h2>BBR incident map</h2><p>Tap markers for details, or tap any point to compose a simulated report.</p></div><button class="btn" id="reset">Reset demonstration</button></div><div id="map" class="map" role="application" aria-label="Interactive fictional incident map"></div><div id="mapWarning" role="alert">Map tiles are unavailable. The fictional incident list and controls still work; check internet access to see the OpenStreetMap background.</div><div class="padded small"><span id="roadsStatus">Loading BBR road geometry…</span> Base map © OpenStreetMap contributors. This prototype overlays <b>1,269 imported BBR road features</b> in blue, derived from unverified OSM reference geometry. Roads are illustrative and do not indicate safe routes or closures.</div></div>
 <aside><div class="panel"><div class="panelhead"><div><h2>Incident explorer</h2><p id="listCount">Fictional examples</p></div></div><div class="padded"><select id="category" aria-label="Filter by hazard category"><option value="all">All hazard categories</option><option value="flooding">Flooding</option><option value="pothole">Pothole</option><option value="fallen_tree">Fallen tree</option><option value="roadworks">Roadworks</option><option value="road_obstruction">Blocked road</option><option value="storm_damage">Storm damage</option></select><div class="filters" style="margin-top:10px"><button class="btn" data-status="all" aria-pressed="true">All</button><button class="btn" data-status="unverified">Pending</button><button class="btn" data-status="corroborated">Reviewed</button><button class="btn" data-status="rejected">Rejected</button></div></div><div id="list" style="max-height:410px;overflow:auto"></div><div id="detail" class="detail"></div></div></aside></section>
 <section class="layout"><div class="panel padded"><h2 style="margin-top:0;font-size:17px">Try submitting a fictional report</h2><p class="small">Click the map to select coordinates, or use the prefilled point. This is a browser-only simulation; do not submit real emergencies or personal information.</p><form id="newForm"><div class="cols"><div><label for="newCategory">Hazard category</label><select id="newCategory"><option value="pothole">Pothole</option><option value="flooding">Flooding</option><option value="fallen_tree">Fallen tree</option><option value="roadworks">Roadworks</option><option value="road_obstruction">Blocked road</option><option value="storm_damage">Storm damage</option></select></div><div><label>Demonstration location</label><input id="coord" readonly value="3.0855, 101.4330"></div></div><label for="description">Fictional description</label><textarea id="description" maxlength="300" required minlength="12" placeholder="Example: FICTIONAL pothole near a sample junction, for prototype demonstration only."></textarea><div class="actions"><button class="btn primary" type="submit">Add fictional report</button></div></form><p class="small" id="formNotice" aria-live="polite"></p></div>
 <div class="panel padded"><h2 style="margin-top:0;font-size:17px">How the full system works</h2><p class="small">The actual hackathon project includes a local Next.js management website and Expo iPhone app. Residents can submit fictional reports and sample photos, while an operator separately reviews reports and explicitly authorizes photo visibility.</p><p class="small">This independent public prototype simulates the review decision on-page without authentication. It does <b>not</b> expose private photos, operator keys, your laptop's SQLite database, or a remote API.</p><p class="small"><b>Judge walkthrough:</b> pick a map pin → filter by category → inspect review status → add a fictional report → select it → mark it reviewed or rejected → reset.</p></div></section>
@@ -44,84 +44,15 @@ function initializeJudgeMap(){
  window.judgeLeafletMap=map;
  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors',maxZoom:19}).addTo(map);
  layer=L.layerGroup().addTo(map);
- const majorRoads = [
-  // Upper east-west route
-  [
-    [3.0860, 101.4218],
-    [3.0860, 101.4260],
-    [3.0860, 101.4310],
-    [3.0860, 101.4360],
-    [3.0860, 101.4415]
-  ],
-
-  // Lower east-west route
-  [
-    [3.0745, 101.4218],
-    [3.0745, 101.4265],
-    [3.0745, 101.4315],
-    [3.0745, 101.4365],
-    [3.0745, 101.4415]
-  ],
-
-  // Main north-south route
-  [
-    [3.0915, 101.4385],
-    [3.0885, 101.4385],
-    [3.0855, 101.4385],
-    [3.0825, 101.4385],
-    [3.0795, 101.4385],
-    [3.0765, 101.4385]
-  ],
-
-  // Gentle diagonal highway-like route
-  [
-    [3.0765, 101.4240],
-    [3.0785, 101.4275],
-    [3.0805, 101.4310],
-    [3.0825, 101.4345],
-    [3.0845, 101.4380],
-    [3.0865, 101.4415]
-  ]
-];
-
-const localRoads = [
-  [
-    [3.0825, 101.4245],
-    [3.0825, 101.4285],
-    [3.0825, 101.4325],
-    [3.0825, 101.4365]
-  ],
-  [
-    [3.0795, 101.4260],
-    [3.0810, 101.4290],
-    [3.0825, 101.4320],
-    [3.0840, 101.4350]
-  ],
-  [
-    [3.0885, 101.4290],
-    [3.0865, 101.4310],
-    [3.0845, 101.4330],
-    [3.0825, 101.4350]
-  ]
-];
-
-majorRoads.forEach(pts =>
-  L.polyline(pts, {
-    color: '#2563eb',
-    weight: 4,
-    opacity: 0.75,
-    interactive: false
-  }).addTo(map)
-);
-
-localRoads.forEach(pts =>
-  L.polyline(pts, {
-    color: '#60a5fa',
-    weight: 2.5,
-    opacity: 0.65,
-    interactive: false
-  }).addTo(map)
-);
+ // OSM road geometry is reference-only, not evidence of open or safe routes.
+ fetch('./assets/bbr-roads.geojson',{cache:'no-store'})
+  .then(response=>{if(!response.ok)throw Error('Road data unavailable');return response.json()})
+  .then(data=>{
+   if(!data||data.type!=='FeatureCollection'||!Array.isArray(data.features)||!data.features.length)throw Error('Road data is empty');
+   const category=feature=>{const kind=String(feature?.properties?.highway||'').toLowerCase();if(['motorway','trunk','primary','secondary','tertiary','motorway_link','trunk_link','primary_link','secondary_link','tertiary_link'].includes(kind))return 'major';if(['service','driveway','parking_aisle'].includes(kind))return 'service';return 'local'};
+   window.judgeRoadLayer=L.geoJSON(data,{style:feature=>{const cat=category(feature);return cat==='major'?{color:'#2563eb',weight:4,opacity:.72,interactive:false}:cat==='service'?{color:'#93c5fd',weight:1.7,opacity:.68,interactive:false}:{color:'#60a5fa',weight:2.5,opacity:.78,interactive:false}},interactive:false}).addTo(map);
+   const note=document.getElementById('roadsStatus');if(note)note.textContent=data.features.length.toLocaleString()+' BBR road features loaded (unverified OSM reference geometry).';
+  }).catch(err=>{const note=document.getElementById('roadsStatus');if(note)note.textContent='Road overlay unavailable: '+err.message;console.error('Judge road map:',err)});
  map.on('click',e=>{point=[e.latlng.lat,e.latlng.lng];$('coord').value=point.map(n=>n.toFixed(5)).join(', ');});
  map.invalidateSize(true);
  render();
