@@ -2,19 +2,20 @@ import {test} from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 const read=(p:string)=>readFileSync(p,"utf8");
-test("both management lists use compact selectable rows and preserve manual details",()=>{
+test("management review uses compact selectable list and an adjacent detail panel",()=>{
  const reports=read("src/components/management/V2HazardManager.tsx");
  const groups=read("src/components/management/IncidentManager.tsx");
- assert.match(reports,/aria-expanded=\{selectedReportId===item\.id\}/);
- assert.match(reports,/selectedReportId===item\.id\?<div id=/);
+ assert.match(reports,/visibleItems\.map\(item=><li/);
+ assert.match(reports,/aria-pressed=\{selectedReportId===item\.id\}/);
+ assert.match(reports,/selectedReport && visibleItems\.some/);
+ assert.match(reports,/xl:grid-cols-/);
  assert.match(groups,/aria-expanded=\{selectedIncidentId===incident\.id\}/);
  assert.match(groups,/selectedIncidentId===incident\.id\?<div id=/);
- assert.doesNotMatch(reports,/visibleItems\.map\(item=><article/);
- assert.doesNotMatch(groups,/visible\.map\(incident=><article/);
 });
-test("operator and private-photo safeguards remain inside selected items",()=>{
+test("review justifications and separately approved resident photo visibility remain",()=>{
  const reports=read("src/components/management/V2HazardManager.tsx");
  const groups=read("src/components/management/IncidentManager.tsx");
- for(const s of ["function toggleReport","URL.revokeObjectURL(url)","publishPhotos[item.id]","Corroborate report","Reject report"])assert.ok(reports.includes(s));
- for(const s of ["Create a fictional incident group","Find AI candidates","Link selected report","Save incident decision","IncidentRoadCandidates","Operator justification"])assert.ok(groups.includes(s));
+ for(const s of ["function toggleReport","URL.revokeObjectURL(url)","publishPhotos[selectedReport.id]","Approve report","Reject report","x-demo-operator-key","Reason for decision"])assert.ok(reports.includes(s),s);
+ assert.match(reports,/publishPhoto:decision==="corroborated"&&photoStates\?\.\[id\]==="private_unreviewed"&&publishPhotos\[id\]===true/);
+ for(const s of ["Create a fictional incident group","Find AI candidates","Link selected report","Save incident decision","IncidentRoadCandidates","Operator justification"])assert.ok(groups.includes(s),s);
 });
