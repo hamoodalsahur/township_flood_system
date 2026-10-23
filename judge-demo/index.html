@@ -44,8 +44,84 @@ function initializeJudgeMap(){
  window.judgeLeafletMap=map;
  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors',maxZoom:19}).addTo(map);
  layer=L.layerGroup().addTo(map);
- const demoRoads=[[[3.076,101.422],[3.080,101.428],[3.087,101.433],[3.094,101.440]],[[3.095,101.424],[3.088,101.429],[3.082,101.434],[3.076,101.440]],[[3.089,101.422],[3.086,101.430],[3.085,101.440],[3.082,101.448]],[[3.079,101.424],[3.083,101.430],[3.092,101.434]],[[3.092,101.426],[3.084,101.427],[3.078,101.433]]];
- demoRoads.forEach((pts,i)=>L.polyline(pts,{color:i<2?'#2563eb':'#60a5fa',weight:i<2?5:3,opacity:.8,interactive:false}).addTo(map));
+ const majorRoads = [
+  // Upper east-west route
+  [
+    [3.0860, 101.4218],
+    [3.0860, 101.4260],
+    [3.0860, 101.4310],
+    [3.0860, 101.4360],
+    [3.0860, 101.4415]
+  ],
+
+  // Lower east-west route
+  [
+    [3.0745, 101.4218],
+    [3.0745, 101.4265],
+    [3.0745, 101.4315],
+    [3.0745, 101.4365],
+    [3.0745, 101.4415]
+  ],
+
+  // Main north-south route
+  [
+    [3.0915, 101.4385],
+    [3.0885, 101.4385],
+    [3.0855, 101.4385],
+    [3.0825, 101.4385],
+    [3.0795, 101.4385],
+    [3.0765, 101.4385]
+  ],
+
+  // Gentle diagonal highway-like route
+  [
+    [3.0765, 101.4240],
+    [3.0785, 101.4275],
+    [3.0805, 101.4310],
+    [3.0825, 101.4345],
+    [3.0845, 101.4380],
+    [3.0865, 101.4415]
+  ]
+];
+
+const localRoads = [
+  [
+    [3.0825, 101.4245],
+    [3.0825, 101.4285],
+    [3.0825, 101.4325],
+    [3.0825, 101.4365]
+  ],
+  [
+    [3.0795, 101.4260],
+    [3.0810, 101.4290],
+    [3.0825, 101.4320],
+    [3.0840, 101.4350]
+  ],
+  [
+    [3.0885, 101.4290],
+    [3.0865, 101.4310],
+    [3.0845, 101.4330],
+    [3.0825, 101.4350]
+  ]
+];
+
+majorRoads.forEach(pts =>
+  L.polyline(pts, {
+    color: '#2563eb',
+    weight: 4,
+    opacity: 0.75,
+    interactive: false
+  }).addTo(map)
+);
+
+localRoads.forEach(pts =>
+  L.polyline(pts, {
+    color: '#60a5fa',
+    weight: 2.5,
+    opacity: 0.65,
+    interactive: false
+  }).addTo(map)
+);
  map.on('click',e=>{point=[e.latlng.lat,e.latlng.lng];$('coord').value=point.map(n=>n.toFixed(5)).join(', ');});
  map.invalidateSize(true);
  render();
