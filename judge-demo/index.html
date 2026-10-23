@@ -34,12 +34,23 @@ const emoji={flooding:'🌧️',fallen_tree:'🌳',roadworks:'🚧',pothole:'�
 const colors={flooding:'#1986c1',fallen_tree:'#7a9b36',roadworks:'#e0a024',pothole:'#c07b37',road_obstruction:'#bd4c49',storm_damage:'#8561b8'};
 let rows=initial.map(x=>({...x})),chosen='DEMO-001',status='all',point=[3.0855,101.4330],map=null,layer=null; const stock={flooding:'https://unsplash.com/photos/JqdJkazTqcs/download?force=true&w=800',fallen_tree:'https://unsplash.com/photos/oAliArJAlno/download?force=true&w=800',roadworks:'https://unsplash.com/photos/1NYgUNi_ONQ/download?force=true&w=800',pothole:'https://unsplash.com/photos/oAliArJAlno/download?force=true&w=800',road_obstruction:'https://unsplash.com/photos/s-eopVGdzzo/download?force=true&w=800',storm_damage:'https://unsplash.com/photos/JqdJkazTqcs/download?force=true&w=800'};const fallback='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400"><rect width="800" height="400" fill="#d8e8ec"/><path d="M0 360L300 100L520 100L800 360" stroke="#5799ba" stroke-width="45" fill="none"/><text x="400" y="210" font-size="36" text-anchor="middle" fill="#24546c">Illustrative demo incident</text></svg>');;
 const $=id=>document.getElementById(id),safe=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-if(window.L){map=L.map('map',{scrollWheelZoom:false}).setView([3.0857,101.4338],13);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors',maxZoom:19}).addTo(map);layer=L.layerGroup().addTo(map);window.judgeLeafletMap=map;
-// Schematic blue lines are illustrative demo overlays, not authoritative mapped road geometry.
-const demoRoads=[[[3.076,101.422],[3.080,101.428],[3.087,101.433],[3.094,101.440]],[[3.095,101.424],[3.088,101.429],[3.082,101.434],[3.076,101.440]],[[3.089,101.422],[3.086,101.430],[3.085,101.440],[3.082,101.448]],[[3.079,101.424],[3.083,101.430],[3.092,101.434]],[[3.092,101.426],[3.084,101.427],[3.078,101.433]]];demoRoads.forEach((pts,i)=>L.polyline(pts,{color:i<2?'#2563eb':'#60a5fa',weight:i<2?5:3,opacity:.8,interactive:false}).addTo(map));
-map.on('click',e=>{point=[e.latlng.lat,e.latlng.lng];$('coord').value=point.map(n=>n.toFixed(5)).join(', ');});
-}else{$('map').style.height='90px';$('mapWarning').style.display='block'}
+// Initialize Leaflet ONLY when the map view is visible. A hidden initial container
+// has 0x0 dimensions, causing detached tiles and missing SVG paths and markers.
+function initializeJudgeMap(){
+ if(map){map.invalidateSize(true);return;}
+ if(!window.L){$('mapWarning').textContent='Map library could not load. Check your internet connection.';$('mapWarning').style.display='block';return;}
+ const el=$('map');if(!el.getBoundingClientRect().width||!el.getBoundingClientRect().height)return;
+ map=L.map(el,{scrollWheelZoom:false,zoomControl:true}).setView([3.0857,101.4338],13);
+ window.judgeLeafletMap=map;
+ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors',maxZoom:19}).addTo(map);
+ layer=L.layerGroup().addTo(map);
+ const demoRoads=[[[3.076,101.422],[3.080,101.428],[3.087,101.433],[3.094,101.440]],[[3.095,101.424],[3.088,101.429],[3.082,101.434],[3.076,101.440]],[[3.089,101.422],[3.086,101.430],[3.085,101.440],[3.082,101.448]],[[3.079,101.424],[3.083,101.430],[3.092,101.434]],[[3.092,101.426],[3.084,101.427],[3.078,101.433]]];
+ demoRoads.forEach((pts,i)=>L.polyline(pts,{color:i<2?'#2563eb':'#60a5fa',weight:i<2?5:3,opacity:.8,interactive:false}).addTo(map));
+ map.on('click',e=>{point=[e.latlng.lat,e.latlng.lng];$('coord').value=point.map(n=>n.toFixed(5)).join(', ');});
+ map.invalidateSize(true);
+ render();
+}
+window.initializeJudgeMap=initializeJudgeMap;
 function visible(){return rows.filter(x=>($('category').value==='all'||x.category===$('category').value)&&(status==='all'||x.state===status))}
 function counts(){$('total').textContent=rows.length;$('approved').textContent=rows.filter(x=>x.state==='corroborated').length;$('pending').textContent=rows.filter(x=>x.state==='unverified').length;$('rejected').textContent=rows.filter(x=>x.state==='rejected').length}
 function render(){counts();const subset=visible();$('listCount').textContent=subset.length+' of '+rows.length+' fictional reports';
@@ -80,7 +91,7 @@ render();
  research.innerHTML+='<div class="panel fakepanel" style="margin-top:18px"><h3>AI evaluation & research</h3><p>The original hackathon system runs local analysis on the developer machine. GitHub Pages cannot run the Next.js APIs, local Ollama inference, or research exports that require server functionality. This section preserves the familiar navigation while honestly showing the hosted demo limitations.</p><span class="mutedtag">Local-only AI — not running on this site</span></div>';
  system.innerHTML+='<div class="panel fakepanel" style="margin-top:18px"><h3>Prototype diagnostics</h3><p>Static hosting: GitHub Pages. Report persistence: in-memory (tab session only). Management review: simulated. Authentication: not provided in public preview. Reference map: OpenStreetMap background. Verified road status: unavailable.</p><button class="btn" data-go="maps">Open demonstration map →</button></div>';
  notice.remove();overview.prepend(notice);
- const show=id=>{document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.dataset.page===id));document.querySelectorAll('.navbtn').forEach(x=>x.classList.toggle('selected',x.dataset.view===id));history.replaceState(null,'','#'+id);if(id==='maps'&&window.judgeLeafletMap){requestAnimationFrame(()=>{window.judgeLeafletMap.invalidateSize(true);setTimeout(()=>window.judgeLeafletMap.invalidateSize(true),180)})}window.scrollTo(0,0)};
+ const show=id=>{document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.dataset.page===id));document.querySelectorAll('.navbtn').forEach(x=>x.classList.toggle('selected',x.dataset.view===id));history.replaceState(null,'','#'+id);if(id==='maps'){requestAnimationFrame(()=>{window.initializeJudgeMap?.();setTimeout(()=>window.judgeLeafletMap?.invalidateSize(true),160)})}window.scrollTo(0,0)};
  document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>show(b.dataset.view)));
  document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>show(b.dataset.go)));
  const originalRender=window.setInterval(()=>{const reports=[...document.querySelectorAll('#list .report')];const recent=document.getElementById('overviewRecent'),queue=document.getElementById('overviewQueue');if(!recent||!queue)return;recent.innerHTML=reports.slice(0,5).map(x=>'<div class="recentitem">'+x.querySelector('b')?.textContent+'<br><span class="small">'+x.querySelector('p')?.textContent+'</span></div>').join('');queue.innerHTML=reports.filter(x=>x.querySelector('.pending')).slice(0,4).map(x=>'<div class="recentitem">'+x.querySelector('b')?.textContent+' <span class="pill pending">Awaiting review</span></div>').join('')||'<p class="small">No reports currently awaiting review.</p>';},750);
