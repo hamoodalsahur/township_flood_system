@@ -38,3 +38,15 @@ Then, after safe branch switch, run `npm test`, `npm run typecheck`, `npm run bu
 
 ## Not production-ready
 This remains a fictional, local academic demo. Operator key authentication is not a deployable account system; OSM roads are unverified and must not be used to assert real conditions or safe routes. No actual incidents, emergencies or real identifying images should be used for the test.
+
+## Final acceptance update — October 23, 2026
+
+Operator confirmed browser presentation of the management redesign and a successful PC↔iPhone fictional-report workflow (submitted image, human review, private photo not shown to residents, separately approved photo shown, rejected incident handling). Additional map count correction was implemented on this PR after that test:
+
+- Management map now defaults to submitted reports, excluding rejected submissions.
+- Four authored fictional map examples are preserved but **opt-in**, under **Include 4 built-in examples**.
+- The count distinguishes visible map pins and submitted records; category filters may make the visible number smaller.
+- Added `tests/management-map-marker-count.test.ts`; CI must pass at the PR head.
+- This final map correction was reported as visually accepted, but no automatic merge occurred.
+
+**Release gate:** review and approve merging PR #85 explicitly. Mobile work is on a separate stacked branch `feature/m4-map-incident-first`; its PR #12 targets `feature/m4-evidence-integrated-foundation`, **not `main`**. Consolidate mobile features separately, verifying the full 31-commit diff and local project-specific assets. Do not force-delete untracked lockfiles or edit existing SQLite/GeoJSON files while switching branches.
