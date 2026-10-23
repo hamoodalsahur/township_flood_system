@@ -13,7 +13,7 @@ const componentPaths={
   system:"src/components/management/pages/SystemPage.tsx"
 } as const;
 const retained={
-  overview:["IncidentOversight","ReviewAgeQueue","OperatorAuditSummary"],
+  overview:["ReviewAgeQueue","OperatorAuditSummary"],
   incidents:["IncidentManager","V2HazardManager","ReportWorkspace"],
   maps:["GeographicReferenceWorkspace","DemoController","MapWorkspace","ConnectivityPanel"],
   evidence:["EvidenceInventory","EvidenceConsistency"],
@@ -33,7 +33,7 @@ test("each navigation entry resolves to a real App Router page using a scoped cl
   assert.match(view,/ManagementSectionHeading/);
  }
 });
-test("all nineteen existing management tools remain reachable from their intended sections",()=>{
+test("all active management workflows remain accessible from their intended sections",()=>{
  const all=new Set<string>();
  for(const section of MANAGEMENT_SECTIONS){
   const view=read(componentPaths[section.id]);
@@ -43,7 +43,10 @@ test("all nineteen existing management tools remain reachable from their intende
    all.add(name);
   }
  }
- assert.equal(all.size,19);
+ assert.equal(all.size,18);
+ const overview=read(componentPaths.overview);
+ assert.match(overview,/\/api\/v2\/incident-oversight/);
+ assert.match(overview,/\/api\/v2\/hazards/);
 });
 test("operator navigation stays within persistent management layout and original local authorization boundary",()=>{
  const shell=read("src/components/management/ManagementShell.tsx");
@@ -66,7 +69,7 @@ test("private image approval and fictional/Osm disclaimers remain in the same es
  assert.match(incident,/V2HazardManager/);
  assert.match(evidence,/incidents#report-review/);
  assert.doesNotMatch(evidence,/<V2HazardManager\b/);
- assert.match(maps,/OSM unverified/);
+ assert.match(read("src/components/maps/GeographicReferenceWorkspace.tsx"),/Unverified map data/);
  assert.match(maps,/schematic/);
  assert.match(system,/read-only/);
 });

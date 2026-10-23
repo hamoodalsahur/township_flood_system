@@ -11,19 +11,19 @@ export default function SystemPage(){
  const operatorKey=useManagementOperatorKey();
  return <>
   <ManagementSectionHeading section="system"/>
-  <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">Advanced local-demo checks are read-only. They do not validate live hazards, geographic access, operator identity or production security.</div>
+  <p className="mb-4 text-sm text-slate-600">System checks and read-only records for the local fictional prototype.</p>
   <DemoDataQuality operatorKey={operatorKey}/>
   <div className="mt-6 space-y-4">
    <details className="rounded-2xl border border-slate-200 bg-white p-4" aria-label="OSM geographic diagnostics">
-    <summary className="cursor-pointer font-semibold text-slate-900">Geographic source and OSM diagnostics</summary>
-    <p className="mt-2 text-sm text-slate-600">Unverified topology, source fingerprint and access tags. Expand only when you need to inspect geographic research details.</p>
+    <summary className="cursor-pointer font-semibold text-slate-900">Map source diagnostics</summary>
+    <p className="mt-2 text-sm text-slate-600">Detailed geographic source and reference-data information.</p>
     <RoadTopologyQuality operatorKey={operatorKey}/>
     <GeoSourceManifest operatorKey={operatorKey}/>
     <RoadAccessTags operatorKey={operatorKey}/>
    </details>
-   <details className="rounded-2xl border border-slate-200 bg-white p-4" aria-label="Full demonstration audit history">
+   <details className="rounded-2xl border border-slate-200 bg-white p-4" aria-label="Operator audit history">
     <summary className="cursor-pointer font-semibold text-slate-900">Full fictional audit history</summary>
-    <p className="mt-2 text-sm text-slate-600">Existing detailed action history is kept separate from the aggregate activity counts shown on Overview.</p>
+    <p className="mt-2 text-sm text-slate-600">Detailed history of recorded operator actions.</p>
     <AuditPanel operatorKey={operatorKey}/>
    </details>
   </div>

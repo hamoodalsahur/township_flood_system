@@ -36,7 +36,7 @@ export default function GeographicReferenceWorkspace() {
   const [selectedRoadId, setSelectedRoadId] = useState<string | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<number | null>(null);
   const [hazardCategory, setHazardCategory] = useState<HazardCategory | "all">("all");
-  const [showDemoHazards, setShowDemoHazards] = useState(true);
+  const [showExampleHazards, setShowExampleHazards] = useState(false);
   const [selectedHazardId, setSelectedHazardId] = useState<string | null>(null);
   const [storedHazards, setStoredHazards] = useState<typeof DEMO_HAZARDS>([]);
   const [hazardError, setHazardError] = useState("");
@@ -78,8 +78,12 @@ export default function GeographicReferenceWorkspace() {
     window.addEventListener("township-hazards-updated",listener);
     return ()=>window.removeEventListener("township-hazards-updated",listener);
   },[]);
-  const allHazards=[...DEMO_HAZARDS,...storedHazards];
-  const visibleHazards = showDemoHazards ? filterDemoHazards(hazardCategory,allHazards) : [];
+  // Submitted reports appear by default; four authored example pins are opt-in.
+  // Rejected submissions remain in the review queue but not the operational map.
+  const rejectedIds=new Set(reviewedReports.filter(item=>item.reviewState==="rejected").map(item=>item.id));
+  const submittedMapHazards=storedHazards.filter(item=>!rejectedIds.has(item.id));
+  const allHazards=[...submittedMapHazards,...(showExampleHazards?DEMO_HAZARDS:[])];
+  const visibleHazards=filterDemoHazards(hazardCategory,allHazards);
   const selectedHazard = allHazards.find(hazard => hazard.id === selectedHazardId) ?? null;
   async function submitDemoHazard() {
     if(!hints.canSubmit||!draftPosition){
@@ -162,8 +166,8 @@ export default function GeographicReferenceWorkspace() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2 text-teal-800"><MapPinned size={18} aria-hidden="true" /><p className="text-xs font-bold uppercase tracking-[.14em]">Interactive area map</p></div>
-          <h2 className="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">Bandar Bukit Raja · Road explorer</h2>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">Browse mapped roads, filter by type and select a line to inspect its OpenStreetMap source.</p>
+          <h2 className="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">Bandar Bukit Raja · Incident map</h2>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">Explore fictional report markers and BBR roads. Select a marker for details or a line for road-reference information.</p>
         </div>
         <span className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-900"><span className="h-2 w-2 rounded-full bg-amber-500"/> Unverified map data</span>
       </div>
@@ -174,16 +178,19 @@ export default function GeographicReferenceWorkspace() {
             {categories.map(category => <option key={category.value} value={category.value}>{category.label}</option>)}
           </select>
         </label>
-        <label className="block text-sm font-semibold">
+        <details className="rounded-xl border border-slate-200 bg-white px-3 py-2">
+          <summary className="cursor-pointer text-sm font-semibold">Advanced road groups</summary>
+          <label className="mt-2 block text-sm font-semibold">
           Inspect candidate group
           <select value={groupNumber} onChange={event => { setGroupNumber(Number(event.target.value)); setFilter("all"); setSelectedRoadId(null); setSelectedNodeId(null); }} className="mt-1 block rounded-lg border border-slate-300 bg-white px-3 py-2">
             <option value={0}>All imported roads</option>
             {smallGroups.map(group => <option key={group.groupNumber} value={group.groupNumber}>Group {group.groupNumber} ({group.roadLineCount} lines)</option>)}
           </select>
-        </label>
+          </label>
+        </details>
         <p className="text-sm text-slate-600">{visibleRoads.length} lines displayed · {roads.length} imported</p>
       </div>
-      <div className="mt-3 rounded-xl border border-blue-200 bg-blue-50/60 p-3" aria-label="Demonstration road colour legend">
+      <details className="mt-3 rounded-xl border border-blue-200 bg-blue-50/60 p-3" aria-label="Demonstration road colour legend"><summary className="cursor-pointer text-sm font-semibold text-blue-950">Road overlay details and legend</summary><div className="mt-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm font-bold text-blue-950">Blue road hierarchy · unverified OSM reference</p>
           <label className="flex items-center gap-2 text-xs font-semibold text-slate-700">
@@ -202,14 +209,14 @@ export default function GeographicReferenceWorkspace() {
           </span>)}
         </div>
         <p className="mt-2 text-xs leading-5 text-slate-700">Colored dashed sections indicate approximate vicinity of corroborated <strong>fictional</strong> reports, not road closures or traffic status. Pending/rejected reports never recolor roads. Ambiguous nearby road matches are deliberately excluded. {vicinityStrokes.length} example vicinity overlay(s) identified.</p>
-      </div>
+      </div></details>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-orange-200 bg-orange-50/60 p-3">
         <div>
-          <p className="text-sm font-bold text-orange-950">Example township hazard pins</p>
-          <p className="text-xs text-orange-900">Fictional examples at illustrative locations — no actual hazard observations.</p>
+          <p className="text-sm font-bold text-orange-950">Submitted incident markers</p>
+          <p className="text-xs text-orange-900">Reports in this local demo; rejected reports are excluded. Not verified road conditions.</p>
         </div>
         <label className="flex items-center gap-2 text-xs font-semibold text-orange-950">
-          <input type="checkbox" checked={showDemoHazards} onChange={event => { setShowDemoHazards(event.target.checked); setSelectedHazardId(null); }} /> Show examples
+          <input type="checkbox" checked={showExampleHazards} onChange={event => { setShowExampleHazards(event.target.checked); setSelectedHazardId(null); }} /> Include 4 built-in examples
         </label>
         <label className="text-xs font-semibold text-slate-700">Hazard type
           <select value={hazardCategory} onChange={event => { setHazardCategory(event.target.value as HazardCategory | "all"); setSelectedHazardId(null); }}
@@ -218,18 +225,18 @@ export default function GeographicReferenceWorkspace() {
             {HAZARD_CATEGORIES.map(category => <option value={category} key={category}>{CATEGORY_LABELS[category]}</option>)}
           </select>
         </label>
-        <span className="text-xs font-medium text-slate-600">{visibleHazards.length} fictional marker(s)</span>
+        <span className="text-xs font-medium text-slate-600">{visibleHazards.length} map marker(s) · {submittedMapHazards.length} submitted{showExampleHazards?" + 4 examples":""}</span>
       </div>
-      <div className="mt-2 flex flex-wrap gap-2" aria-label="Hazard marker legend">
+      <details className="mt-2 rounded-xl border border-slate-200 bg-white px-3 py-2"><summary className="cursor-pointer text-xs font-semibold text-slate-700">Category shortcuts</summary><div className="mt-3 flex flex-wrap gap-2" aria-label="Hazard marker legend">
         {HAZARD_CATEGORIES.map(category => (
-          <button type="button" key={category} onClick={() => { setHazardCategory(category); setShowDemoHazards(true); setSelectedHazardId(null); }}
+          <button type="button" key={category} onClick={() => { setHazardCategory(category); setSelectedHazardId(null); }}
             aria-pressed={hazardCategory === category}
             className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${hazardCategory === category ? "border-teal-600 bg-teal-50 text-teal-900" : "border-slate-200 bg-white text-slate-700 hover:border-teal-300"}`}>
             <span aria-hidden="true">{HAZARD_SYMBOLS[category].symbol}</span>{CATEGORY_LABELS[category]}
           </button>
         ))}
         {hazardCategory !== "all" ? <button type="button" onClick={() => setHazardCategory("all")} className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold">Show all</button> : null}
-      </div>
+      </div></details>
       <details className="mt-3 rounded-xl border border-teal-200 bg-teal-50/50" id="report-demo-hazard">
         <summary className="cursor-pointer px-4 py-3 text-sm font-bold text-teal-900">Submit a fictional report · Choose a position on the map below</summary>
         <div className="grid gap-3 border-t border-teal-100 p-4 sm:grid-cols-2">
@@ -275,8 +282,8 @@ export default function GeographicReferenceWorkspace() {
               <p className="text-xs font-semibold text-slate-600">{CATEGORY_LABELS[selectedHazard.category]} · {selectedHazard.impact.replaceAll("_"," ")}</p>
               <p className="text-sm leading-5">{selectedHazard.description}</p>
               {photoApprovedIds.includes(selectedHazard.id) ? <div className="rounded-xl border border-teal-200 bg-teal-50 p-2"><img src={`/api/v2/hazards/${selectedHazard.id}/evidence/approved`} alt={`Operator-approved fictional evidence for ${CATEGORY_LABELS[selectedHazard.category]}`} loading="lazy" className="max-h-64 w-full rounded-lg object-contain" /><p className="mt-2 text-xs font-semibold text-teal-900">Operator-approved sample image · fictional report, not verification of road conditions</p></div> : null}
-              <p className="text-xs text-slate-500">Illustrative map position only, not a real reported incident. No verified road access impact.</p>
-              <button type="button" onClick={() => setSelectedHazardId(null)} className="rounded-lg border border-slate-200 px-3 py-1 text-xs font-semibold">Close example</button>
+              <p className="text-xs text-slate-500">{selectedHazard.id.startsWith("demo-")?"Built-in fictional example.":"Submitted fictional report."} No verified road access impact.</p>
+              <button type="button" onClick={() => setSelectedHazardId(null)} className="rounded-lg border border-slate-200 px-3 py-1 text-xs font-semibold">Close details</button>
             </div>
           ) : null}
           <h3 className="text-xs font-extrabold uppercase tracking-widest text-slate-500">Road details</h3>

@@ -9,13 +9,13 @@ export default function IncidentsPage(){
  const operatorKey=useManagementOperatorKey();
  return <>
   <ManagementSectionHeading section="incidents"/>
-  <div className="rounded-xl border border-teal-200 bg-teal-50 p-4 text-sm text-teal-950">
-   Human review is required before a fictional incident is grouped, rejected or marked resolved. Optional AI candidates cannot perform actions automatically.
-  </div>
-  <section id="incident-groups" aria-label="Incident grouping" className="scroll-mt-32"><IncidentManager operatorKey={operatorKey}/></section>
-  <section id="report-review" aria-label="Report and private photo decisions" className="scroll-mt-32"><V2HazardManager operatorKey={operatorKey}/></section>
+  <section id="report-review" aria-label="Report review and submitted photos" className="scroll-mt-28"><V2HazardManager operatorKey={operatorKey}/></section>
+  <details className="mt-7 rounded-2xl border border-slate-200 bg-white p-5">
+    <summary className="cursor-pointer text-base font-bold text-slate-800">Incident grouping and lifecycle <span className="ml-2 text-xs font-normal text-slate-500">Advanced workflow</span></summary>
+    <section id="incident-groups" aria-label="Incident grouping" className="mt-4"><IncidentManager operatorKey={operatorKey}/></section>
+  </details>
   <details className="mt-6 rounded-2xl border border-slate-200 bg-white p-5">
-   <summary className="cursor-pointer font-semibold text-slate-900">Legacy schematic simulation report queue</summary>
+   <summary className="cursor-pointer font-semibold text-slate-900">Historical simulator reports</summary>
    <p className="mt-2 text-sm leading-6 text-slate-600">Separate from the geographic report workflow. Retained for the original fictional road-network demonstration.</p>
    <ReportWorkspace view="management" operatorKey={operatorKey}/>
   </details>
