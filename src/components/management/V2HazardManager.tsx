@@ -29,6 +29,8 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
   const [message,setMessage]=useState("");
   const [busy,setBusy]=useState(false);
   const [evidenceUrls,setEvidenceUrls]=useState<Record<string,string>>({});
+  const [photoLoadingId,setPhotoLoadingId]=useState<string|null>(null);
+  const [photoErrorId,setPhotoErrorId]=useState<string|null>(null);
   const [aiResults,setAiResults]=useState<Record<string,{provider:string;model:string;analysed:number;matches:{id:string;similarity:number;category:string}[];disclaimer:string}>>({});
   const [aiErrors,setAiErrors]=useState<Record<string,string>>({});
   const [aiBusy,setAiBusy]=useState<string|null>(null);
@@ -39,6 +41,8 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
       delete evidenceUrlsRef.current[key];
     }
     setEvidenceUrls({});
+    setPhotoErrorId(null);
+    setPhotoLoadingId(null);
     const next=selectedReportId===id?null:id;
     activeSelectionRef.current=next;
     setSelectedReportId(next);
@@ -54,7 +58,8 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
     finally{setAiBusy(null);}
   }
   async function viewEvidence(id:string) {
-    setMessage("");
+    setPhotoLoadingId(id);
+    setPhotoErrorId(null);
     try {
       const response=await fetch("/api/v2/hazards/"+id+"/evidence/private",{headers:{"x-demo-operator-key":operatorKey},cache:"no-store"});
       if(!response.ok)throw Error(response.status===404?"No private photo is attached to this report.":"Could not retrieve private photo.");
@@ -68,7 +73,8 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
         evidenceUrlsRef.current=updated;
         return updated;
       });
-    }catch(error){setMessage(error instanceof Error?error.message:"Could not open evidence");}
+    }catch(error){if(activeSelectionRef.current===id)setPhotoErrorId(id);}
+    finally{setPhotoLoadingId(current=>current===id?null:current);}
   }
   async function reload() {
     setLoading(true);setLoadError("");
@@ -226,7 +232,9 @@ export default function V2HazardManager({operatorKey}:{operatorKey:string}) {
             {selectedPhotoMode==="inspect_private" && (evidenceUrls[selectedReport.id]
               ? <img src={evidenceUrls[selectedReport.id]} alt={"Attached fictional sample for "+categoryName(selectedReport.category)}
                   className="max-h-80 w-full rounded-xl bg-slate-50 object-contain"/>
-              : <p role="status" className="rounded-xl bg-slate-50 p-4 text-sm text-slate-600">Loading attached image for operator review…</p>)}
+              : photoErrorId===selectedReport.id
+                ? <div role="alert" className="rounded-xl bg-rose-50 p-4 text-sm text-rose-900">Photo could not be opened. <button type="button" onClick={()=>void viewEvidence(selectedReport.id)} className="font-semibold underline">Retry photo</button></div>
+                : <p role="status" className="rounded-xl bg-slate-50 p-4 text-sm text-slate-600">{photoLoadingId===selectedReport.id?"Loading attached image…":"Preparing photo preview…"}</p>)}
             {selectedPhotoMode==="none" && <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-500">No photo attached.</p>}
             {selectedPhotoMode==="unavailable" && <p role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">Photo information could not be verified. Refresh before making a photo visibility decision.</p>}
           </div>
