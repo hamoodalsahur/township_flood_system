@@ -42,7 +42,7 @@ export default function OverviewPage(){
  const cards=metrics?[
   ["All reports",metrics.totalReports],
   ["Awaiting review",metrics.unverifiedReports],
-  ["Reviewed",Math.max(0,metrics.totalReports-metrics.unverifiedReports)],
+  ["Reviewed",reports.filter(r=>r.reviewState==="corroborated").length],
   ["Active incident groups",metrics.activeIncidents]
  ] as const:[];
  const queue=reports.filter(r=>r.reviewState==="unverified").slice(0,4);
