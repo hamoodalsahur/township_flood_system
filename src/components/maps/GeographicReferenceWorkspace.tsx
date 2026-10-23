@@ -174,13 +174,16 @@ export default function GeographicReferenceWorkspace() {
             {categories.map(category => <option key={category.value} value={category.value}>{category.label}</option>)}
           </select>
         </label>
-        <label className="block text-sm font-semibold">
+        <details className="rounded-xl border border-slate-200 bg-white px-3 py-2">
+          <summary className="cursor-pointer text-sm font-semibold">Advanced road groups</summary>
+          <label className="mt-2 block text-sm font-semibold">
           Inspect candidate group
           <select value={groupNumber} onChange={event => { setGroupNumber(Number(event.target.value)); setFilter("all"); setSelectedRoadId(null); setSelectedNodeId(null); }} className="mt-1 block rounded-lg border border-slate-300 bg-white px-3 py-2">
             <option value={0}>All imported roads</option>
             {smallGroups.map(group => <option key={group.groupNumber} value={group.groupNumber}>Group {group.groupNumber} ({group.roadLineCount} lines)</option>)}
           </select>
-        </label>
+          </label>
+        </details>
         <p className="text-sm text-slate-600">{visibleRoads.length} lines displayed · {roads.length} imported</p>
       </div>
       <details className="mt-3 rounded-xl border border-blue-200 bg-blue-50/60 p-3" aria-label="Demonstration road colour legend"><summary className="cursor-pointer text-sm font-semibold text-blue-950">Road overlay details and legend</summary><div className="mt-3">
