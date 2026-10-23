@@ -1,10 +1,8 @@
 # Township Flood System
 
-A flood-awareness prototype we're building for the Sime Darby Property University Hackathon, using Bandar Bukit Raja as our case study.
+A hazard-awareness prototype we're building for the Sime Darby Property University Hackathon, using Bandar Bukit Raja as our case study.
 
 The idea is simple: give residents a clearer picture of possible road disruptions, while giving township management a place to review reports and follow up on incidents.
-
-**Where we're at:** we've built the basic app, a test database, an interactive network map, a five-stage flood simulation, a road-connection checker and a demo reporting page. We're still using **fictional locations and simulated conditions**, not live flood data or actual road directions.
 
 ## Project links — website and mobile app
 
