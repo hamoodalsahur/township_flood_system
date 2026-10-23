@@ -77,7 +77,7 @@ export default function ManagementControls() {
   return (
     <>
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-teal-200 bg-teal-50 p-3.5">
-        <p className="text-sm font-semibold text-teal-900">Demo management dashboard unlocked</p>
+        <div className="flex flex-wrap items-center gap-3"><p className="text-sm font-semibold text-teal-900">Demo management dashboard unlocked</p><a href="#operations" className="rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-teal-800 ring-1 ring-teal-200 hover:bg-teal-100">Jump to demo scenarios ↓</a></div>
         <button type="button" onClick={() => { setOperatorKey(""); setPassword(""); setError(""); }}
           className="inline-flex items-center gap-2 rounded-lg border border-teal-300 bg-white px-4 py-2 text-sm font-semibold text-teal-900 hover:bg-teal-100">
           <LogOut size={16} /> Log out

@@ -10,7 +10,7 @@ export async function getCurrentScenario() {
  * All operations occur in one transaction, so both portals see the same state.
  * Only simulation-labelled records are changed; never intended for production.
  */
-export async function activateScenario(stage: DemoStage) {
+export async function activateScenario(stage: DemoStage, options: { preset?: boolean } = {}) {
   const statuses = roadStatusesForStage(stage);
   await prisma.$transaction(async tx => {
     const roads = await tx.roadSegment.findMany({ where: { sourceMode: "simulation" } });
@@ -18,7 +18,7 @@ export async function activateScenario(stage: DemoStage) {
       const desired = statuses[road.id] as RoadStatus | undefined;
       if (!desired || desired === road.currentStatus) continue;
       // A confirmed closure cannot be reopened by changing simulated environmental levels.
-      if (road.currentStatus === "confirmed_closed" && desired !== "confirmed_closed" && stage !== 1) continue;
+      if (road.currentStatus === "confirmed_closed" && desired !== "confirmed_closed" && stage !== 1 && !options.preset) continue;
       // Returning to stage 1 is an explicit DEMO RESET, never interpreted as inspection/reopening.
       await tx.roadSegment.update({ where: { id: road.id }, data: { currentStatus: desired, statusUpdatedAt: new Date() } });
       await tx.roadStatusEvent.create({
@@ -27,12 +27,14 @@ export async function activateScenario(stage: DemoStage) {
           status: desired,
           sourceMode: "simulation",
           actorId: desired === "confirmed_closed" ? "SIMULATED_DEMO_OPERATOR" : "SCENARIO_CONTROLLER",
-          reason: stageChangeReason(stage, road.id, desired),
+          reason: options.preset
+            ? `EXPLICIT SIMULATION PRESET CHANGE: fictional scene selected by local demo operator; no real closure or reopening. ${stageChangeReason(stage, road.id, desired)}`
+            : stageChangeReason(stage, road.id, desired),
           observedAt: new Date(),
         },
       });
     }
-    await tx.scenarioRun.create({ data: { label: `Stage ${stage} — synthetic demonstration`, stage, sourceMode: "simulation" } });
+    await tx.scenarioRun.create({ data: { label: options.preset ? `Preset ${stage} — explicit synthetic scene change` : `Stage ${stage} — synthetic demonstration`, stage, sourceMode: "simulation" } });
   });
   return getCurrentScenario();
 }
