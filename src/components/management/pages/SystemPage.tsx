@@ -11,7 +11,7 @@ export default function SystemPage(){
  const operatorKey=useManagementOperatorKey();
  return <>
   <ManagementSectionHeading section="system"/>
-  <p className="mb-4 text-sm text-slate-600">Read-only system checks and records for the local fictional prototype.</p>
+  <p className="mb-4 text-sm text-slate-600">System checks and read-only records for the local fictional prototype.</p>
   <DemoDataQuality operatorKey={operatorKey}/>
   <div className="mt-6 space-y-4">
    <details className="rounded-2xl border border-slate-200 bg-white p-4" aria-label="OSM geographic diagnostics">
