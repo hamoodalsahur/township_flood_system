@@ -4,13 +4,13 @@ This is a **static, independent browser demo**, not the local Next.js applicatio
 
 ## What judges can do
 - Open the website immediately without cloning, npm, Git, QR scanning, or Expo Go.
-- View OpenStreetMap background geography around the Bandar Bukit Raja research area.
+- View OpenStreetMap background geography and blue BBR reference-road overlays around the Bandar Bukit Raja research area.
 - Inspect **six explicitly fictional hazard pins**, filter by category and review state.
 - Submit an invented report at a selected point and approve/reject that sample in their own browser session.
 - Reset everything to the six original scenarios.
 
 ## Accurate limitations
-- This site uses OpenStreetMap raster map tiles from a third-party CDN. It does **not** bundle the private 1,269-feature BBR road GeoJSON found only on the owner's laptop. If offline, map tiles may be blank.
+- This site uses OpenStreetMap raster map tiles from a third-party CDN. It includes a public copy of the 1,269-feature BBR reference-road GeoJSON used for the blue map overlay (not verified road accessibility). If offline, map tiles may be blank.
 - Fictional incident data is part of `index.html`. No report is shared between visitors, stored on a server, or sent to management.
 - The approve/reject controls demonstrate review behavior but do not perform authenticated operator actions.
 - It does not simulate an AI routing engine, automatic road closures, real-time conditions, private photos, or production security.
@@ -21,7 +21,7 @@ A dedicated workflow `.github/workflows/judge-demo-pages.yml` publishes the cont
 
 1. On GitHub open repository **Settings > Pages > Build and deployment** and select **GitHub Actions**.
 2. Go to **Actions > Publish judge demo to GitHub Pages** and run the workflow if no deployment started automatically.
-3. Inspect deployment result and verify the actual Pages URL on phone and desktop; it is expected to look like `https://hamoodalsahur.github.io/township_flood_system/` but **this is not a live link until GitHub confirms it**.
+3. Inspect deployment result and verify the actual Pages URL on phone and desktop; it is expected to look like `https://hamoodalsahur.github.io/township_road_hazard_system/` and confirm it works after deployment.
 4. Test the filters, report submission, review, reset, and mobile layout.
 
 **Do not enable Pages using the branch /docs source alongside this workflow**: the workflow handles deployment.
