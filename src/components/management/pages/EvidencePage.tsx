@@ -4,6 +4,7 @@ import {ArrowUpRight,Images} from "lucide-react";
 import ManagementSectionHeading from "@/components/management/ManagementSectionHeading";
 import {useManagementOperatorKey} from "@/components/management/ManagementShell";
 import EvidenceInventory from "@/components/management/EvidenceInventory";
+import EvidenceBrowser from "@/components/management/EvidenceBrowser";
 import EvidenceConsistency from "@/components/management/EvidenceConsistency";
 
 export default function EvidencePage(){
@@ -19,7 +20,11 @@ export default function EvidencePage(){
     Open photo reviews <ArrowUpRight size={16} aria-hidden="true"/>
    </Link>
   </div>
-  <EvidenceInventory operatorKey={operatorKey}/>
+  <EvidenceBrowser operatorKey={operatorKey}/>
+  <details className="mt-5 rounded-2xl border border-slate-200 bg-white p-5">
+    <summary className="cursor-pointer font-semibold text-slate-800">Photo inventory and storage counts <span className="ml-2 text-xs font-normal text-slate-500">Advanced</span></summary>
+    <EvidenceInventory operatorKey={operatorKey}/>
+  </details>
   <details className="mt-5 rounded-2xl border border-slate-200 bg-white p-5">
     <summary className="cursor-pointer font-semibold text-slate-800">Evidence consistency checks <span className="ml-2 text-xs font-normal text-slate-500">Advanced</span></summary>
     <EvidenceConsistency operatorKey={operatorKey}/>
