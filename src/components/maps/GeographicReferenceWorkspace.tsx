@@ -36,7 +36,7 @@ export default function GeographicReferenceWorkspace() {
   const [selectedRoadId, setSelectedRoadId] = useState<string | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<number | null>(null);
   const [hazardCategory, setHazardCategory] = useState<HazardCategory | "all">("all");
-  const [showDemoHazards, setShowDemoHazards] = useState(true);
+  const [showExampleHazards, setShowExampleHazards] = useState(false);
   const [selectedHazardId, setSelectedHazardId] = useState<string | null>(null);
   const [storedHazards, setStoredHazards] = useState<typeof DEMO_HAZARDS>([]);
   const [hazardError, setHazardError] = useState("");
@@ -78,8 +78,12 @@ export default function GeographicReferenceWorkspace() {
     window.addEventListener("township-hazards-updated",listener);
     return ()=>window.removeEventListener("township-hazards-updated",listener);
   },[]);
-  const allHazards=[...DEMO_HAZARDS,...storedHazards];
-  const visibleHazards = showDemoHazards ? filterDemoHazards(hazardCategory,allHazards) : [];
+  // Submitted reports appear by default; four authored example pins are opt-in.
+  // Rejected submissions remain in the review queue but not the operational map.
+  const rejectedIds=new Set(reviewedReports.filter(item=>item.reviewState==="rejected").map(item=>item.id));
+  const submittedMapHazards=storedHazards.filter(item=>!rejectedIds.has(item.id));
+  const allHazards=[...submittedMapHazards,...(showExampleHazards?DEMO_HAZARDS:[])];
+  const visibleHazards=filterDemoHazards(hazardCategory,allHazards);
   const selectedHazard = allHazards.find(hazard => hazard.id === selectedHazardId) ?? null;
   async function submitDemoHazard() {
     if(!hints.canSubmit||!draftPosition){
@@ -208,11 +212,11 @@ export default function GeographicReferenceWorkspace() {
       </div></details>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-orange-200 bg-orange-50/60 p-3">
         <div>
-          <p className="text-sm font-bold text-orange-950">Example township hazard pins</p>
-          <p className="text-xs text-orange-900">Fictional examples at illustrative locations — no actual hazard observations.</p>
+          <p className="text-sm font-bold text-orange-950">Submitted incident markers</p>
+          <p className="text-xs text-orange-900">Reports in this local demo; rejected reports are excluded. Not verified road conditions.</p>
         </div>
         <label className="flex items-center gap-2 text-xs font-semibold text-orange-950">
-          <input type="checkbox" checked={showDemoHazards} onChange={event => { setShowDemoHazards(event.target.checked); setSelectedHazardId(null); }} /> Show examples
+          <input type="checkbox" checked={showExampleHazards} onChange={event => { setShowExampleHazards(event.target.checked); setSelectedHazardId(null); }} /> Include 4 built-in examples
         </label>
         <label className="text-xs font-semibold text-slate-700">Hazard type
           <select value={hazardCategory} onChange={event => { setHazardCategory(event.target.value as HazardCategory | "all"); setSelectedHazardId(null); }}
@@ -221,11 +225,11 @@ export default function GeographicReferenceWorkspace() {
             {HAZARD_CATEGORIES.map(category => <option value={category} key={category}>{CATEGORY_LABELS[category]}</option>)}
           </select>
         </label>
-        <span className="text-xs font-medium text-slate-600">{visibleHazards.length} fictional marker(s)</span>
+        <span className="text-xs font-medium text-slate-600">{visibleHazards.length} map marker(s) · {submittedMapHazards.length} submitted{showExampleHazards?" + 4 examples":""}</span>
       </div>
       <details className="mt-2 rounded-xl border border-slate-200 bg-white px-3 py-2"><summary className="cursor-pointer text-xs font-semibold text-slate-700">Category shortcuts</summary><div className="mt-3 flex flex-wrap gap-2" aria-label="Hazard marker legend">
         {HAZARD_CATEGORIES.map(category => (
-          <button type="button" key={category} onClick={() => { setHazardCategory(category); setShowDemoHazards(true); setSelectedHazardId(null); }}
+          <button type="button" key={category} onClick={() => { setHazardCategory(category); setSelectedHazardId(null); }}
             aria-pressed={hazardCategory === category}
             className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${hazardCategory === category ? "border-teal-600 bg-teal-50 text-teal-900" : "border-slate-200 bg-white text-slate-700 hover:border-teal-300"}`}>
             <span aria-hidden="true">{HAZARD_SYMBOLS[category].symbol}</span>{CATEGORY_LABELS[category]}
@@ -278,8 +282,8 @@ export default function GeographicReferenceWorkspace() {
               <p className="text-xs font-semibold text-slate-600">{CATEGORY_LABELS[selectedHazard.category]} · {selectedHazard.impact.replaceAll("_"," ")}</p>
               <p className="text-sm leading-5">{selectedHazard.description}</p>
               {photoApprovedIds.includes(selectedHazard.id) ? <div className="rounded-xl border border-teal-200 bg-teal-50 p-2"><img src={`/api/v2/hazards/${selectedHazard.id}/evidence/approved`} alt={`Operator-approved fictional evidence for ${CATEGORY_LABELS[selectedHazard.category]}`} loading="lazy" className="max-h-64 w-full rounded-lg object-contain" /><p className="mt-2 text-xs font-semibold text-teal-900">Operator-approved sample image · fictional report, not verification of road conditions</p></div> : null}
-              <p className="text-xs text-slate-500">Illustrative map position only, not a real reported incident. No verified road access impact.</p>
-              <button type="button" onClick={() => setSelectedHazardId(null)} className="rounded-lg border border-slate-200 px-3 py-1 text-xs font-semibold">Close example</button>
+              <p className="text-xs text-slate-500">{selectedHazard.id.startsWith("demo-")?"Built-in fictional example.":"Submitted fictional report."} No verified road access impact.</p>
+              <button type="button" onClick={() => setSelectedHazardId(null)} className="rounded-lg border border-slate-200 px-3 py-1 text-xs font-semibold">Close details</button>
             </div>
           ) : null}
           <h3 className="text-xs font-extrabold uppercase tracking-widest text-slate-500">Road details</h3>
