@@ -6,6 +6,36 @@ The idea is simple: give residents a clearer picture of possible road disruption
 
 **Where we're at:** we've built the basic app, a test database, an interactive network map, a five-stage flood simulation, a road-connection checker and a demo reporting page. We're still using **fictional locations and simulated conditions**, not live flood data or actual road directions.
 
+## Project links — website and mobile app
+
+This hackathon project has **two separate GitHub repositories that work together**:
+
+| Component | Repository | Purpose |
+| --- | --- | --- |
+| **Website + API + management** | [township_flood_system](https://github.com/hamoodalsahur/township_flood_system) (this repository) | Next.js backend, SQLite development database, operator dashboard and incident review |
+| **Resident mobile app** | [township_system_mobile](https://github.com/hamoodalsahur/township_system_mobile) | Expo / React Native app for viewing fictional incidents and submitting reports and sample photos |
+| **Public judge demo** | [Open the hackathon demo](https://hamoodalsahur.github.io/township_flood_system/) | Standalone browser demonstration; does **not** connect to the local backend or mobile app database |
+
+### How the apps connect in local development
+
+```text
+Resident mobile app (Expo on iPhone)
+          |
+          | HTTP requests to http://<PC-WIFI-IPv4>:3000
+          v
+Next.js backend API (this repository, running on the PC)
+          |
+          v
+Local SQLite development database
+          ^
+          |
+Management website (same Next.js backend)
+```
+
+**To test the integrated system:** start this repository's Next.js server with `npm run dev`, start Expo from the [mobile repository](https://github.com/hamoodalsahur/township_system_mobile) with `npx expo start`, and keep the iPhone and PC on the same trusted Wi-Fi. In the mobile app, open **About → Local Backend**, configure your PC's Wi-Fi IPv4 address with port `3000`, and test the connection. Do not use `localhost` as the mobile device's backend address.
+
+A mobile report is sent to the website's API and stored in the local database for operator review. This integration was tested locally; cloning the repositories alone does not connect them, and local SQLite data and private configuration are not shipped through GitHub. See the [mobile README](https://github.com/hamoodalsahur/township_system_mobile#readme) for device setup.
+
 ## Try it on your computer
 
 You'll need Node.js, npm and Git. Open the project folder in VS Code and run:
