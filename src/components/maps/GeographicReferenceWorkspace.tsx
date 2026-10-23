@@ -162,8 +162,8 @@ export default function GeographicReferenceWorkspace() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2 text-teal-800"><MapPinned size={18} aria-hidden="true" /><p className="text-xs font-bold uppercase tracking-[.14em]">Interactive area map</p></div>
-          <h2 className="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">Bandar Bukit Raja · Road explorer</h2>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">Browse mapped roads, filter by type and select a line to inspect its OpenStreetMap source.</p>
+          <h2 className="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">Bandar Bukit Raja · Incident map</h2>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">Explore fictional report markers and BBR roads. Select a marker for details or a line for road-reference information.</p>
         </div>
         <span className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-900"><span className="h-2 w-2 rounded-full bg-amber-500"/> Unverified map data</span>
       </div>
@@ -183,7 +183,7 @@ export default function GeographicReferenceWorkspace() {
         </label>
         <p className="text-sm text-slate-600">{visibleRoads.length} lines displayed · {roads.length} imported</p>
       </div>
-      <div className="mt-3 rounded-xl border border-blue-200 bg-blue-50/60 p-3" aria-label="Demonstration road colour legend">
+      <details className="mt-3 rounded-xl border border-blue-200 bg-blue-50/60 p-3" aria-label="Demonstration road colour legend"><summary className="cursor-pointer text-sm font-semibold text-blue-950">Road overlay details and legend</summary><div className="mt-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm font-bold text-blue-950">Blue road hierarchy · unverified OSM reference</p>
           <label className="flex items-center gap-2 text-xs font-semibold text-slate-700">
@@ -202,7 +202,7 @@ export default function GeographicReferenceWorkspace() {
           </span>)}
         </div>
         <p className="mt-2 text-xs leading-5 text-slate-700">Colored dashed sections indicate approximate vicinity of corroborated <strong>fictional</strong> reports, not road closures or traffic status. Pending/rejected reports never recolor roads. Ambiguous nearby road matches are deliberately excluded. {vicinityStrokes.length} example vicinity overlay(s) identified.</p>
-      </div>
+      </div></details>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-orange-200 bg-orange-50/60 p-3">
         <div>
           <p className="text-sm font-bold text-orange-950">Example township hazard pins</p>
@@ -220,7 +220,7 @@ export default function GeographicReferenceWorkspace() {
         </label>
         <span className="text-xs font-medium text-slate-600">{visibleHazards.length} fictional marker(s)</span>
       </div>
-      <div className="mt-2 flex flex-wrap gap-2" aria-label="Hazard marker legend">
+      <details className="mt-2 rounded-xl border border-slate-200 bg-white px-3 py-2"><summary className="cursor-pointer text-xs font-semibold text-slate-700">Category shortcuts</summary><div className="mt-3 flex flex-wrap gap-2" aria-label="Hazard marker legend">
         {HAZARD_CATEGORIES.map(category => (
           <button type="button" key={category} onClick={() => { setHazardCategory(category); setShowDemoHazards(true); setSelectedHazardId(null); }}
             aria-pressed={hazardCategory === category}
@@ -229,7 +229,7 @@ export default function GeographicReferenceWorkspace() {
           </button>
         ))}
         {hazardCategory !== "all" ? <button type="button" onClick={() => setHazardCategory("all")} className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold">Show all</button> : null}
-      </div>
+      </div></details>
       <details className="mt-3 rounded-xl border border-teal-200 bg-teal-50/50" id="report-demo-hazard">
         <summary className="cursor-pointer px-4 py-3 text-sm font-bold text-teal-900">Submit a fictional report · Choose a position on the map below</summary>
         <div className="grid gap-3 border-t border-teal-100 p-4 sm:grid-cols-2">
